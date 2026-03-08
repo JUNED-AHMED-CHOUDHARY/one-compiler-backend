@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",           // The version of JS your code turns into
+    "module": "NodeNext",         // Modern module resolution
+    "rootDir": "./src",           // Where your TS files live
+    "outDir": "./dist",           // Where the compiled JS will go
+    "strict": true,               // Enables all strict type-checking options
+    "esModuleInterop": true,      // Fixes common import issues with older JS libs
+    "skipLibCheck": true,         // Speeds up compilation
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["src/**/*"],        // Tell TS to only look in the src folder
+  "exclude": ["node_modules"]     // Don't waste time checking library code
+}

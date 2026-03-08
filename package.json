@@ -1,0 +1,36 @@
+{
+  "name": "one-compiler-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "nodemon --watch src --exec ts-node src/index.ts",
+    "build": "tsc",
+    "server": "node dist/index.js",
+    "start:prod": "npm run build && npm run start",
+    "test": "echo \"No tests configured yet\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/morgan": "^1.9.10",
+    "@types/node": "^25.3.5",
+    "nodemon": "^3.1.14",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "axios": "^1.13.6",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "helmet": "^8.1.0",
+    "http-status-codes": "^2.3.0",
+    "morgan": "^1.10.1",
+    "winston": "^3.19.0"
+  }
+}
