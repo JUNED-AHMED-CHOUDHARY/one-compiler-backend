@@ -1,0 +1,9 @@
+npx pretty-quick --staged
+
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(js|mjs|cjs|ts)$' || true)
+
+if [ -n "$STAGED_FILES" ]; then
+  npx eslint $STAGED_FILES
+fi
+
+npm run test
