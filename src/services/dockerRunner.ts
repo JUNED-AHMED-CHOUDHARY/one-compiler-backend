@@ -2,30 +2,54 @@ import { exec } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
 
-export const runCppCode = async (jobId: string, code: string): Promise<string> => {
+export type SUPPORTED_PROGRAMMING_LANGUAGES = "cpp" | "javaScript";
+
+export const runProgrammingLanguagesCode = async (jobId: string, language: SUPPORTED_PROGRAMMING_LANGUAGES, code: string): Promise<string> => {
   return new Promise((resolve, reject) => {
     // 1. Define paths inside your existing project root
     const jobDir = path.resolve(__dirname, "../temp", jobId); // Adjust '../temp' based on where this file is
-    const filePath = path.join(jobDir, "main.cpp");
 
     // 2. Setup the temporary directory
     if (!fs.existsSync(jobDir)) {
       fs.mkdirSync(jobDir, { recursive: true });
     }
-    fs.writeFileSync(filePath, code);
+    let fileName = "";
+    let dockerCmd = "";
 
-    console.log(`[Job ${jobId}] Code written to ${filePath}. Starting Docker...`);
+    // 🛡️ THE SHIELD: No internet, max 128MB RAM, max half a CPU core
+    const securityFlags = `--rm --network none --memory="256m" --cpus="0.5" -v "${jobDir}:/app" -w /app`;
 
-    // 3. Construct the Docker command
-    const dockerCmd = `docker run --rm -v "${jobDir}:/app" -w /app gcc:13 sh -c "g++ main.cpp -o main && ./main"`;
+    switch (language) {
+      case "cpp":
+        fileName = "main.cpp";
+        dockerCmd = `docker run ${securityFlags} gcc:13 sh -c "g++ main.cpp -o main && ./main"`;
+        break;
+
+      case "javaScript":
+        fileName = "index.js";
+        dockerCmd = `docker run ${securityFlags} node:20 node index.js`;
+        break;
+
+      default:
+        fs.rmSync(jobDir, { recursive: true, force: true });
+        return reject(`Unsupported language: ${language}`);
+    }
+
+    fs.writeFileSync(path.join(jobDir, fileName), code);
+
+    console.log(`[Job ${jobId}] Running ${language} code. Starting Docker...`);
 
     // 4. Execute the container
-    exec(dockerCmd, (error, stdout, stderr) => {
+    exec(dockerCmd, { timeout: 7000 }, (error, stdout, stderr) => {
       // Clean up the directory immediately after execution
       fs.rmSync(jobDir, { recursive: true, force: true });
       console.log(`[Job ${jobId}] Cleaned up workspace.`);
 
       if (error) {
+        // If Node.js killed the process because of the timeout
+        if (error.killed) {
+          return resolve(`Execution Error: Time Limit Exceeded (7 seconds)`);
+        }
         return reject(`Execution Error: ${error.message}`);
       }
       if (stderr) {
