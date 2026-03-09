@@ -7,6 +7,8 @@ import errorHandler from "./exceptions/error-handler";
 import notFoundHandler from "./exceptions/not-found-handler";
 import { logger, requestLoggerMiddleware } from "./services/logger";
 import indexRoutes from "./routes/indexRoutes";
+// register bullmq workers..
+import "./Queue/workers/registerWorkers";
 
 const app = express();
 const port = Number(ENV.PORT) || 7000;
