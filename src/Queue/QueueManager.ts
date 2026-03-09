@@ -54,8 +54,8 @@ class QueueManager {
       logger.error(`❌ [${name}] Worker error:`, { error: error.message });
     });
 
-    worker.on("completed", (job) => {
-      logger.info(`✅ [${name}] Job ${job?.id} completed successfully.`);
+    worker.on("completed", (job, returnvalue) => {
+      logger.info(`✅ [${name}] Job ${job?.id} completed successfully. output :- ${returnvalue.output}`);
     });
   }
 }
