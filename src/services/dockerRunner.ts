@@ -2,9 +2,9 @@ import { exec } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
 
-export type SUPPORTED_PROGRAMMING_LANGUAGES = "cpp" | "javaScript";
+export type SUPPORTED_PROGRAMMING_LANGUAGES = "cpp" | "javaScript" | "python";
 
-export const runProgrammingLanguagesCode = async (jobId: string, language: SUPPORTED_PROGRAMMING_LANGUAGES, code: string): Promise<string> => {
+export const runProgrammingLanguagesCode = async (jobId: string, language: SUPPORTED_PROGRAMMING_LANGUAGES, code: string, stdin: string): Promise<string> => {
   return new Promise((resolve, reject) => {
     // 1. Define paths inside your existing project root
     const jobDir = path.resolve(__dirname, "../temp", jobId); // Adjust '../temp' based on where this file is
@@ -22,12 +22,17 @@ export const runProgrammingLanguagesCode = async (jobId: string, language: SUPPO
     switch (language) {
       case "cpp":
         fileName = "main.cpp";
-        dockerCmd = `docker run ${securityFlags} gcc:13 sh -c "g++ main.cpp -o main && ./main"`;
+        dockerCmd = `docker run ${securityFlags} gcc:13 sh -c "g++ main.cpp -o main && ./main < input.txt"`;
         break;
 
       case "javaScript":
         fileName = "index.js";
-        dockerCmd = `docker run ${securityFlags} node:20 node index.js`;
+        dockerCmd = `docker run ${securityFlags} node:20 sh -c "node index.js < input.txt"`;
+        break;
+
+      case "python":
+        fileName = "main.py";
+        dockerCmd = `docker run ${securityFlags} python:3.11-alpine sh -c "python main.py < input.txt"`;
         break;
 
       default:
@@ -35,8 +40,10 @@ export const runProgrammingLanguagesCode = async (jobId: string, language: SUPPO
         return reject(`Unsupported language: ${language}`);
     }
 
+    // Write the code file
     fs.writeFileSync(path.join(jobDir, fileName), code);
-
+    // Write the stdin file (even if it's empty, we create it so the '< input.txt' command doesn't crash)
+    fs.writeFileSync(path.join(jobDir, "input.txt"), stdin);
     console.log(`[Job ${jobId}] Running ${language} code. Starting Docker...`);
 
     // 4. Execute the container
