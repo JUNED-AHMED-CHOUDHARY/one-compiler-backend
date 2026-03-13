@@ -16,7 +16,7 @@ export const runProgrammingLanguagesCode = async (jobId: string, language: SUPPO
     let fileName = "";
     let dockerCmd = "";
 
-    // 🛡️ THE SHIELD: No internet, max 128MB RAM, max half a CPU core
+    // 🛡️ THE SHIELD: No internet, max 256 RAM, max half a CPU core
     const securityFlags = `--rm --network none --memory="256m" --cpus="0.5" -v "${jobDir}:/app" -w /app`;
 
     switch (language) {
@@ -27,7 +27,7 @@ export const runProgrammingLanguagesCode = async (jobId: string, language: SUPPO
 
       case "javaScript":
         fileName = "index.js";
-        dockerCmd = `docker run ${securityFlags} node:20 sh -c "node index.js < input.txt"`;
+        dockerCmd = `docker run ${securityFlags} node:20-alpine sh -c "node index.js < input.txt"`;
         break;
 
       case "python":
