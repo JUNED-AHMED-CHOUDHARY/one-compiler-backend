@@ -6,8 +6,8 @@ export type SUPPORTED_PROGRAMMING_LANGUAGES = "cpp" | "javaScript" | "python";
 
 export const runProgrammingLanguagesCode = async (jobId: string, language: SUPPORTED_PROGRAMMING_LANGUAGES, code: string, stdin: string): Promise<string> => {
   return new Promise((resolve, reject) => {
-    // 1. Define paths inside your existing project root
-    const jobDir = path.resolve(__dirname, "../temp", jobId); // Adjust '../temp' based on where this file is
+    // 1. Always create temp workspace at repository root (/temp)
+    const jobDir = path.resolve(__dirname, "../../temp", jobId);
 
     // 2. Setup the temporary directory
     if (!fs.existsSync(jobDir)) {
