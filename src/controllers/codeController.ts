@@ -35,9 +35,10 @@ export const getExecutionResult = async (req: Request, res: Response) => {
     }
 
     case "failed": {
+      const fallbackError = (job?.stacktrace && job.stacktrace[0]) || "Job failed due to an unknown error";
       return res.status(StatusCodes.OK).json({
         status: jobState,
-        error: job?.failedReason
+        error: job?.failedReason || fallbackError
       });
     }
   }

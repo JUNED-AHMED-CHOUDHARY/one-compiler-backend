@@ -40,7 +40,7 @@ export const runProgrammingLanguagesCode = async (jobId: string, language: SUPPO
 
       default:
         fs.rmSync(jobDir, { recursive: true, force: true });
-        return reject(`Unsupported language: ${language}`);
+        return reject(new Error(`Unsupported language: ${language}`));
     }
 
     // Write the code file
@@ -103,7 +103,7 @@ export const runProgrammingLanguagesCode = async (jobId: string, language: SUPPO
 
     child.on("error", (error) => {
       clearTimeout(timeoutId);
-      reject(`Process Error: ${error.message}`);
+      reject(new Error(`Process Error: ${error.message}`));
     });
   });
 };
