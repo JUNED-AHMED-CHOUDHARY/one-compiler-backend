@@ -9,6 +9,7 @@ import { logger, requestLoggerMiddleware } from "./services/logger";
 import indexRoutes from "./routes/indexRoutes";
 // register bullmq workers..
 import "./Queue/workers/registerWorkers";
+import { poolManager } from "./services/PoolManager";
 
 const app = express();
 const port = Number(ENV.PORT) || 7000;
@@ -30,6 +31,7 @@ app.use(errorHandler);
 
 const startServer = async () => {
   try {
+    await poolManager.initialize();
     const server = app.listen(port, () => {
       logger.info("Server is running", { port });
     });
@@ -38,8 +40,34 @@ const startServer = async () => {
       logger.error("HTTP server failed", { error });
       process.exit(1);
     });
+
+    // 1. GRACEFUL SHUTDOWN: Clean up containers if the server stops via terminal (Ctrl+C)
+    process.on("SIGINT", async () => {
+      await poolManager.cleanupAllContainers(true);
+      process.exit(0);
+    });
+
+    // 2. GRACEFUL SHUTDOWN: Clean up containers if killed by a process manager (PM2/Docker)
+    process.on("SIGTERM", async () => {
+      await poolManager.cleanupAllContainers(true);
+      process.exit(0);
+    });
+
+    // 4. CRASH SHUTDOWN: Clean up if a random bug crashes the server
+    process.on("uncaughtException", async (error) => {
+      logger.error("💥 Uncaught Exception! Shutting down gracefully...", { error });
+      await poolManager.cleanupAllContainers(true);
+      process.exit(1); // Exit with code 1 indicating a failure
+    });
+
+    // 5. PROMISE REJECTION: Clean up if an async function fails silently
+    process.on("unhandledRejection", async (reason) => {
+      logger.error("💥 Unhandled Promise Rejection! Shutting down gracefully...", { reason });
+      await poolManager.cleanupAllContainers(true);
+      process.exit(1);
+    });
   } catch (error: unknown) {
-    logger.error("Unkown Error.", { error });
+    logger.error("Unknown Error.", { error });
     process.exit(1);
   }
 };
