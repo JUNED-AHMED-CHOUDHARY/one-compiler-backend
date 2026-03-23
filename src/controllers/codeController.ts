@@ -28,9 +28,10 @@ export const getExecutionResult = async (req: Request, res: Response) => {
 
   switch (jobState) {
     case "completed": {
+      const returnedValue = job?.returnvalue?.output ?? "";
       return res.status(StatusCodes.OK).json({
-        status: jobState,
-        output: job?.returnvalue.output
+        status: returnedValue ? jobState : "active",
+        output: returnedValue
       });
     }
 
