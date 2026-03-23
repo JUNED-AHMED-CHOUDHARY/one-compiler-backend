@@ -2,7 +2,7 @@ import { spawn } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
 
-export type SUPPORTED_PROGRAMMING_LANGUAGES = "cpp" | "javaScript" | "python";
+export type SUPPORTED_PROGRAMMING_LANGUAGES = "cpp" | "javascript" | "python";
 
 export const runProgrammingLanguagesCode = async (jobId: string, language: SUPPORTED_PROGRAMMING_LANGUAGES, code: string, stdin: string): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -26,7 +26,7 @@ export const runProgrammingLanguagesCode = async (jobId: string, language: SUPPO
         runCommand = "g++ main.cpp -o main && ./main < input.txt";
         break;
 
-      case "javaScript":
+      case "javascript":
         fileName = "index.js";
         dockerImage = "node:20-alpine";
         runCommand = "node index.js < input.txt";
