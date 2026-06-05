@@ -1,0 +1,21 @@
+model Companies {
+  id         String   @id @db.VarChar(32)
+  name       String   @unique @db.VarChar(120)
+  slug_name  String   @unique @db.VarChar(160)
+  image      String?  @db.VarChar(2048)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  problem_links ProblemCompanies[]
+}
+
+model TopicTags {
+  id          String   @id @db.VarChar(32)
+  name        String   @unique @db.VarChar(80)
+  slug_name   String   @unique @db.VarChar(100)
+  description String?  @db.VarChar(500)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  problem_links ProblemTags[]
+}

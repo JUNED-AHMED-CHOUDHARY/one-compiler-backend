@@ -1,8 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// Main Prisma schema file. Domain models are split under prisma/models.
 
 generator client {
   provider = "prisma-client-js"
@@ -10,23 +6,4 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-}
-
-enum UserRole {
-  ADMIN
-  PROBLEM_SETTER
-  PROBLEM_SOLVER
-}
-
-model User {
-  id String @id // primary key
-  email String @unique
-  password_hash String
-  role UserRole
-  username String @unique
-  name String
-  user_image String?
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-  meta_data Json @default("{}")
 }

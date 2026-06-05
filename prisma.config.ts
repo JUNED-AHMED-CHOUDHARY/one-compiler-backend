@@ -8,7 +8,7 @@ const currentEnvironment = process.env.NODE_ENV === "production" ? "production" 
 dotenv.config({ path: `.env.${currentEnvironment}`, override: true });
 
 export default defineConfig({
-  schema: "prisma/schema.prisma",
+  schema: "prisma",
   migrations: {
     path: "prisma/migrations"
   },

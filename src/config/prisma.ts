@@ -14,7 +14,7 @@ export const disconnectPrisma = async () => {
 export const connectPrisma = async () => {
   try {
     await prisma.$connect();
-    logger.info("Connected to prisma client");
+    logger.info("✅ Connected to prisma client");
   } catch (error) {
     logger.error("Error connecting to database", { error });
     throw error;
