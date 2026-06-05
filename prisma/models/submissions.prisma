@@ -1,15 +1,15 @@
 model Submissions {
-  id                    String              @id @default(cuid())
-  user_id               String
-  problem_id            String
+  id                    String              @id @db.VarChar(32)
+  user_id               String              @db.VarChar(32)
+  problem_id            String              @db.VarChar(32)
   language              ProgrammingLanguage
   status                SubmissionStatus    @default(PENDING)
-  source_code           String
+  source_code           String              @db.Text
   execution_time_ms     Int?
   memory_used_kb        Int?
   testcases_passed      Int                 @default(0)
   failed_testcase_index Int?
-  error_log             String?
+  error_log             String?             @db.Text
   created_at            DateTime            @default(now())
   updated_at            DateTime            @updatedAt
 

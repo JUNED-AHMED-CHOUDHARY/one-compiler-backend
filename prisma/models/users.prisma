@@ -1,11 +1,11 @@
 model Users {
-  id            String   @id // primary key
-  email         String   @unique
-  password_hash String
+  id            String   @id @db.VarChar(32) // generated in app as prefix + nanoid(9)
+  email         String   @unique @db.VarChar(254)
+  password_hash String   @db.VarChar(255)
   role          UserRole
-  username      String   @unique
-  name          String
-  user_image    String?
+  username      String   @unique @db.VarChar(40)
+  name          String   @db.VarChar(100)
+  user_image    String?  @db.VarChar(2048)
   created_at    DateTime @default(now())
   updated_at    DateTime @updatedAt
   meta_data     Json     @default("{}")
