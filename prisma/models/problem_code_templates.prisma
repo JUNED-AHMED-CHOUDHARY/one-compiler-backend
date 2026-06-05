@@ -1,0 +1,13 @@
+model ProblemCodeTemplates {
+  id                String              @id @default(cuid())
+  problem_id        String
+  language          ProgrammingLanguage
+  user_visible_code String
+  hidden_stub_code  String
+  created_at        DateTime            @default(now())
+  updated_at        DateTime            @updatedAt
+
+  problem Problems @relation(fields: [problem_id], references: [id], onDelete: Cascade)
+
+  @@unique([problem_id, language])
+}

@@ -1,0 +1,22 @@
+model Submissions {
+  id                    String              @id @default(cuid())
+  user_id               String
+  problem_id            String
+  language              ProgrammingLanguage
+  status                SubmissionStatus    @default(PENDING)
+  source_code           String
+  execution_time_ms     Int?
+  memory_used_kb        Int?
+  testcases_passed      Int                 @default(0)
+  failed_testcase_index Int?
+  error_log             String?
+  created_at            DateTime            @default(now())
+  updated_at            DateTime            @updatedAt
+
+  user    Users    @relation(fields: [user_id], references: [id])
+  problem Problems @relation(fields: [problem_id], references: [id])
+
+  @@index([user_id])
+  @@index([problem_id])
+  @@index([status])
+}

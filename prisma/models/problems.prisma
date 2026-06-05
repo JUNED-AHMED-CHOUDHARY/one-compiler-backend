@@ -1,0 +1,25 @@
+model Problems {
+  id                          String              @id @default(cuid())
+  problem_name                String
+  problem_slug_name           String              @unique
+  problem_description         String
+  difficulty                  ProblemDifficulty
+  time_limit_ms               Int
+  memory_limit_kb             Int
+  total_submissions           Int                 @default(0)
+  total_accepted              Int                 @default(0)
+  status                      ProblemStatus       @default(DRAFT)
+  reference_solution_code     String
+  reference_solution_language ProgrammingLanguage
+  evaluation_type             EvaluationType      @default(EXACT_MATCH)
+  custom_checker_code         String?
+  meta_data                   Json                @default("{}")
+  created_at                  DateTime            @default(now())
+  updated_at                  DateTime            @updatedAt
+
+  author_links   AuthorProblems[]
+  company_links  ProblemCompanies[]
+  tag_links      ProblemTags[]
+  code_templates ProblemCodeTemplates[]
+  submissions    Submissions[]
+}

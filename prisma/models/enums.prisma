@@ -1,0 +1,52 @@
+enum UserRole {
+  ADMIN
+  PROBLEM_SETTER
+  PROBLEM_SOLVER
+}
+
+enum ProblemDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum ProblemStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ProblemContributionType {
+  CREATOR
+  TESTER
+  EDITORIAL_WRITER
+}
+
+enum ProblemCompanyTimePeriod {
+  LAST_6_MONTHS        @map("0-6_MONTHS")
+  SIX_TO_TWELVE_MONTHS @map("6-12_MONTHS")
+  ONE_TO_TWO_YEARS     @map("1-2_YEARS")
+  OLDER
+}
+
+enum ProgrammingLanguage {
+  CPP
+  JAVASCRIPT
+  PYTHON
+}
+
+enum EvaluationType {
+  EXACT_MATCH
+  CUSTOM_CHECKER
+}
+
+enum SubmissionStatus {
+  PENDING
+  RUNNING
+  ACCEPTED
+  COMPILATION_ERROR
+  RUNTIME_ERROR
+  MEMORY_LIMIT_EXCEEDED
+  TIME_LIMIT_EXCEEDED
+  WRONG_ANSWER
+}

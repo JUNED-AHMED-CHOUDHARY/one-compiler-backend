@@ -1,0 +1,44 @@
+model AuthorProblems {
+  id                String                  @id @default(cuid())
+  problem_id        String
+  user_id           String
+  contribution_type ProblemContributionType @default(CREATOR)
+  created_at        DateTime                @default(now())
+  updated_at        DateTime                @updatedAt
+
+  problem Problems @relation(fields: [problem_id], references: [id], onDelete: Cascade)
+  user    Users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([problem_id, user_id, contribution_type])
+  @@index([user_id])
+  @@map("author_problem_junction")
+}
+
+model ProblemCompanies {
+  problem_id      String
+  company_id      String
+  frequency_score Int                       @default(1)
+  time_period     ProblemCompanyTimePeriod?
+  created_at      DateTime                  @default(now())
+
+  problem Problems  @relation(fields: [problem_id], references: [id], onDelete: Cascade)
+  company Companies @relation(fields: [company_id], references: [id], onDelete: Cascade)
+
+  @@id([problem_id, company_id])
+  @@index([company_id])
+  @@map("problem_company_junction")
+}
+
+model ProblemTags {
+  problem_id String
+  tag_id     String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  problem Problems  @relation(fields: [problem_id], references: [id], onDelete: Cascade)
+  tag     TopicTags @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+
+  @@id([problem_id, tag_id])
+  @@index([tag_id])
+  @@map("problem_tag_junction")
+}
