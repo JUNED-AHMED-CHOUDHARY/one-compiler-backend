@@ -12,7 +12,7 @@ export const connectMongoDB = async () => {
     return;
   }
 
-  // await mongoose.connect(ENV.MONGODB_URI);
+  await mongoose.connect(ENV.MONGODB_URI);
 
   logger.info("✅ Connected to MongoDB");
 };
