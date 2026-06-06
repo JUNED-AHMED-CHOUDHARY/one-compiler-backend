@@ -10,7 +10,8 @@ const ENV = {
   NODE_ENV: currentEnvironment,
   isRunningProd: currentEnvironment === "production",
   REDIS_URI: process.env.REDIS_URI as string,
-  DATABASE_URL: process.env.DATABASE_URL as string
+  DATABASE_URL: process.env.DATABASE_URL as string,
+  MONGODB_URI: process.env.MONGODB_URI as string
 } as const;
 
 export default ENV;

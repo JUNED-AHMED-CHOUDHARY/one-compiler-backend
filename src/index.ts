@@ -11,6 +11,7 @@ import indexRoutes from "./routes/indexRoutes";
 import "./Queue/workers/registerWorkers";
 import { poolManager } from "./services/PoolManager";
 import { connectPrisma, disconnectPrisma } from "./config/prisma";
+import { connectMongoDB, disconnectMongoDB } from "./config/mongodb";
 
 const app = express();
 const port = Number(ENV.PORT) || 7000;
@@ -32,7 +33,7 @@ app.use(errorHandler);
 
 const startServer = async () => {
   try {
-    await Promise.all([connectPrisma(), poolManager.initialize()]);
+    await Promise.all([connectPrisma(), connectMongoDB(), poolManager.initialize()]);
     const server = app.listen(port, () => {
       logger.info("Server is running", { port });
     });
@@ -45,6 +46,7 @@ const startServer = async () => {
     // 1. GRACEFUL SHUTDOWN: Clean up containers if the server stops via terminal (Ctrl+C)
     process.on("SIGINT", async () => {
       await poolManager.cleanupAllContainers(true);
+      await disconnectMongoDB();
       await disconnectPrisma();
       process.exit(0);
     });
@@ -52,6 +54,7 @@ const startServer = async () => {
     // 2. GRACEFUL SHUTDOWN: Clean up containers if killed by a process manager (PM2/Docker)
     process.on("SIGTERM", async () => {
       await poolManager.cleanupAllContainers(true);
+      await disconnectMongoDB();
       await disconnectPrisma();
       process.exit(0);
     });
