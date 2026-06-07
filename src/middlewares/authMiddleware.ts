@@ -1,3 +1,4 @@
+import { UserRole } from "@prisma/client";
 import { NextFunction, type Request, type Response } from "express";
 import { Unauthorized } from "http-errors";
 
@@ -24,4 +25,12 @@ export const isUserAuthenticatedMiddleware = async (req: Request, res: Response,
   req.user = user;
 
   next();
+};
+
+export const validateUserRoleMiddleware = (roles: UserRole[]) => {
+  return (req: Request, _res: Response, next: NextFunction) => {
+    if (!roles.includes(req.user.role)) throw new Unauthorized("You are not allowed to create problems");
+
+    next();
+  };
 };
