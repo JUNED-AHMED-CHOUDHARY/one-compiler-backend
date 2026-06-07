@@ -1,6 +1,6 @@
 import { UserRole } from "@prisma/client";
 import bcrypt from "bcrypt";
-import { type Response } from "express";
+import { NextFunction, type Response } from "express";
 import { StatusCodes } from "http-status-codes";
 
 import { ID_PREFIXES } from "../constants/idPrefixes";
@@ -13,7 +13,7 @@ import { type SignUpBody } from "../zodValidations/authValidations";
 
 const BCRYPT_SALT_ROUNDS = 12;
 
-export const signUpController = async (req: TypedRequestBody<SignUpBody>, res: Response) => {
+export const signUpController = async (req: TypedRequestBody<SignUpBody>, res: Response, next: NextFunction) => {
   const { email, password, name, userName } = req.body;
 
   const existingUser = await UserServices.getUserByEmailOrUsername(email, userName);
@@ -38,8 +38,12 @@ export const signUpController = async (req: TypedRequestBody<SignUpBody>, res: R
 
   const userData = await UserServices.createUser({ id: userId, email, password_hash: passwordHash, role: UserRole.PROBLEM_SOLVER, username: userName, name });
 
-  return res.status(StatusCodes.CREATED).json({
+  res.locals.responseData = {
+    success: true,
+    statusCode: StatusCodes.CREATED,
     message: "User created successfully",
     data: userData
-  });
+  };
+
+  next();
 };
