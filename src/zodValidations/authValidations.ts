@@ -1,4 +1,5 @@
 import { z } from "zod";
+
 import { MAXIMUM_PASSWORD_LENGTH, MINIMUM_NAME_LENGTH, MINIMUM_PASSWORD_LENGTH } from "./variablesUsedInValidations";
 
 export const signUpBodySchema = z
@@ -18,3 +19,10 @@ export const signUpBodySchema = z
   });
 
 export type SignUpBody = z.infer<typeof signUpBodySchema>;
+
+export const loginBodySchema = z.object({
+  emailOrUserName: z.string().min(MINIMUM_NAME_LENGTH),
+  password: z.string().min(MINIMUM_PASSWORD_LENGTH).max(MAXIMUM_PASSWORD_LENGTH)
+});
+
+export type LoginBody = z.infer<typeof loginBodySchema>;
