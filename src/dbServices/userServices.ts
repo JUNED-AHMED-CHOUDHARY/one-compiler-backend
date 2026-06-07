@@ -3,6 +3,14 @@ import { Prisma } from "@prisma/client";
 import prisma from "../config/prisma";
 
 class UserServices {
+  static async getUserById(id: string) {
+    return await prisma.users.findUnique({
+      where: {
+        id
+      }
+    });
+  }
+
   static async getUserByEmail(email: string) {
     return await prisma.users.findUnique({
       where: {
