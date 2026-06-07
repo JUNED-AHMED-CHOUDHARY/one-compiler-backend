@@ -11,7 +11,8 @@ const ENV = {
   isRunningProd: currentEnvironment === "production",
   REDIS_URI: process.env.REDIS_URI as string,
   DATABASE_URL: process.env.DATABASE_URL as string,
-  MONGODB_URI: process.env.MONGODB_URI as string
+  MONGODB_URI: process.env.MONGODB_URI as string,
+  JWT_SECRET: process.env.JWT_SECRET as string
 } as const;
 
 export default ENV;
