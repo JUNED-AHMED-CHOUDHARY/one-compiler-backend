@@ -1,17 +1,18 @@
-import express from "express";
 import cors from "cors";
+import express from "express";
 import helmet from "helmet";
 
 import ENV from "./config/ENV";
+import { connectMongoDB, disconnectMongoDB } from "./config/mongodb";
+import { connectPrisma, disconnectPrisma } from "./config/prisma";
 import errorHandler from "./exceptions/error-handler";
 import notFoundHandler from "./exceptions/not-found-handler";
-import { logger, requestLoggerMiddleware } from "./services/logger";
+import responseMiddlewareHandler from "./middlewares/responseMiddleware";
 import indexRoutes from "./routes/indexRoutes";
+import { logger, requestLoggerMiddleware } from "./services/logger";
 // register bullmq workers..
 import "./Queue/workers/registerWorkers";
 import { poolManager } from "./services/PoolManager";
-import { connectPrisma, disconnectPrisma } from "./config/prisma";
-import { connectMongoDB, disconnectMongoDB } from "./config/mongodb";
 
 const app = express();
 const port = Number(ENV.PORT) || 7000;
@@ -26,6 +27,9 @@ app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
 // routes...
 app.use(indexRoutes);
+
+// response middleware
+app.use(responseMiddlewareHandler);
 
 // error middlewares...
 app.use(notFoundHandler);
