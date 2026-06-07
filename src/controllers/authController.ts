@@ -1,13 +1,14 @@
+import { UserRole } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { type Response } from "express";
 import { StatusCodes } from "http-status-codes";
-import { type SignUpBody } from "../zodValidations/authValidations";
-import { type TypedRequestBody } from "../types/request";
-import { generateId } from "../utilities/commonFunctions";
+
 import { ID_PREFIXES } from "../constants/idPrefixes";
 import UserServices from "../dbServices/userServices";
-import { UserRole } from "@prisma/client";
 import CustomError from "../exceptions/custom-error";
+import { type TypedRequestBody } from "../types/request";
+import { generateId } from "../utilities/commonFunctions";
+import { type SignUpBody } from "../zodValidations/authValidations";
 // TODO : eslint rule for the import sequence..
 
 const BCRYPT_SALT_ROUNDS = 12;
