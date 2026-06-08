@@ -2,15 +2,15 @@ model Problems {
   id                          String              @id @db.VarChar(32)
   problem_name                String              @db.VarChar(200)
   problem_slug_name           String              @unique @db.VarChar(220)
-  problem_description         String              @db.Text
+  problem_description         String?              @db.Text
   difficulty                  ProblemDifficulty
-  time_limit_ms               Int
-  memory_limit_kb             Int
+  time_limit_ms               Int                 @default(2000)
+  memory_limit_kb             Int                 @default(256000)
   total_submissions           Int                 @default(0)
   total_accepted              Int                 @default(0)
   status                      ProblemStatus       @default(DRAFT)
-  reference_solution_code     String              @db.Text
-  reference_solution_language ProgrammingLanguage
+  reference_solution_code     String?              @db.Text
+  reference_solution_language ProgrammingLanguage?
   evaluation_type             EvaluationType      @default(EXACT_MATCH)
   custom_checker_code         String?             @db.Text
   meta_data                   Json                @default("{}")
