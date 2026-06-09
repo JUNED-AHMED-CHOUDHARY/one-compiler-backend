@@ -1,3 +1,4 @@
 export const MINIMUM_PASSWORD_LENGTH = 8;
 export const MAXIMUM_PASSWORD_LENGTH = 128;
 export const MINIMUM_NAME_LENGTH = 2;
+export const MINIMUM_PROBLEM_NAME_SLUG_LENGTH = 3;
