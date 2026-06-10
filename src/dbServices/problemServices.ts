@@ -1,9 +1,10 @@
-import { ProblemDifficulty, TopicTags } from "@prisma/client";
+import { Prisma, ProblemDifficulty, TopicTags } from "@prisma/client";
 
 import prisma from "../config/prisma";
 import { ID_PREFIXES } from "../constants/idPrefixes";
 import { UserInRequest } from "../types/express";
 import { generateId } from "../utilities/commonFunctions";
+import { ProblemIdInParam } from "../zodValidations/problemValidations";
 
 interface DraftProblemData {
   problem_name: string;
@@ -14,6 +15,13 @@ interface DraftProblemData {
 }
 
 class ProblemServices {
+  static async getProblemById(problemId: ProblemIdInParam["problemId"]) {
+    return await prisma.problems.findUnique({
+      where: {
+        id: problemId
+      }
+    });
+  }
   static async getProblemBySlugName(slugName: string) {
     return await prisma.problems.findFirst({
       where: {
@@ -47,6 +55,15 @@ class ProblemServices {
           }
         }
       }
+    });
+  }
+
+  static async updateProblemContent(problemId: ProblemIdInParam["problemId"], payload: Prisma.ProblemsUpdateInput) {
+    return await prisma.problems.update({
+      where: {
+        id: problemId
+      },
+      data: payload
     });
   }
 }
