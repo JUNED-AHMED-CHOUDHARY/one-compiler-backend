@@ -1,11 +1,12 @@
 import { NextFunction, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 
+import ProblemCodeTemplateServices from "../dbServices/problemCodeTemplateServices";
 import ProblemServices from "../dbServices/problemServices";
 import TagServices from "../dbServices/TagServices";
 import CustomError from "../exceptions/custom-error";
 import { TypedRequestBody, TypedRequestParamsBody } from "../types/request";
-import { CreateDraftProblemBody, ProblemIdInParam, UpdateContentBody } from "../zodValidations/problemValidations";
+import { CreateDraftProblemBody, ProblemIdInParam, UpdateContentBody, UpsertProblemTemplatesBody } from "../zodValidations/problemValidations";
 
 export const createDraftProblemController = async (req: TypedRequestBody<CreateDraftProblemBody>, res: Response, next: NextFunction) => {
   const user = req.user;
@@ -50,6 +51,21 @@ export const updateContentController = async (req: TypedRequestParamsBody<Proble
     statusCode: StatusCodes.OK,
     message: "Content updated successfully",
     data: updatedProblem
+  };
+
+  next();
+};
+
+export const upsertProblemTemplatesController = async (req: TypedRequestParamsBody<ProblemIdInParam, UpsertProblemTemplatesBody>, res: Response, next: NextFunction) => {
+  const { problemId } = req.params;
+  const { templates } = req.body;
+  const updatedProblemTemplates = await ProblemCodeTemplateServices.upsertProblemTemplates(problemId, templates);
+
+  res.locals.responseData = {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: "Templates updated successfully",
+    data: updatedProblemTemplates
   };
 
   next();
