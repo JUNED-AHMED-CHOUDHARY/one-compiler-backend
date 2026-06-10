@@ -4,8 +4,8 @@ import { StatusCodes } from "http-status-codes";
 import ProblemServices from "../dbServices/problemServices";
 import TagServices from "../dbServices/TagServices";
 import CustomError from "../exceptions/custom-error";
-import { TypedRequestBody } from "../types/request";
-import { CreateDraftProblemBody } from "../zodValidations/problemValidations";
+import { TypedRequestBody, TypedRequestParamsBody } from "../types/request";
+import { CreateDraftProblemBody, ProblemIdInParam, UpdateContentBody } from "../zodValidations/problemValidations";
 
 export const createDraftProblemController = async (req: TypedRequestBody<CreateDraftProblemBody>, res: Response, next: NextFunction) => {
   const user = req.user;
@@ -34,6 +34,22 @@ export const createDraftProblemController = async (req: TypedRequestBody<CreateD
     statusCode: StatusCodes.CREATED,
     message: "Draft problem created successfully",
     data: draftProblem
+  };
+
+  next();
+};
+
+// step 2 part 1
+export const updateContentController = async (req: TypedRequestParamsBody<ProblemIdInParam, UpdateContentBody>, res: Response, next: NextFunction) => {
+  const { problemId } = req.params;
+
+  const updatedProblem = await ProblemServices.updateProblemContent(problemId, req.body);
+
+  res.locals.responseData = {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: "Content updated successfully",
+    data: updatedProblem
   };
 
   next();

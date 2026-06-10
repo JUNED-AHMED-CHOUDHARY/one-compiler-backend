@@ -1,4 +1,7 @@
 import { spawn } from "node:child_process";
+
+import { MAX_MEMORY_LIMIT_KB } from "../zodValidations/variablesUsedInValidations";
+
 import { logger } from "./logger";
 
 const POOL_CONFIG = {
@@ -82,7 +85,7 @@ export class WarmPoolManager {
       "--rm",
       "--name",
       name,
-      "--memory=256m",
+      `--memory=${MAX_MEMORY_LIMIT_KB}kb`,
       "--cpus=0.5",
       "--network",
       "none",

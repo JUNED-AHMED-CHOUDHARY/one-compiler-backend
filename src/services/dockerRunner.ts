@@ -1,4 +1,7 @@
 import { spawn } from "child_process";
+
+import { MAX_EXECUTION_TIME_IN_MS, MAX_OUTPUT_LENGTH } from "../zodValidations/variablesUsedInValidations";
+
 import { poolManager } from "./PoolManager"; // Make sure path is correct
 
 export type SUPPORTED_PROGRAMMING_LANGUAGES = "cpp" | "javascript" | "python";
@@ -54,7 +57,6 @@ ${runCommand}
 
       let stdoutData = "";
       let stderrData = "";
-      const MAX_OUTPUT_LENGTH = 500 * 1024; // 500KB
 
       child.stdout.on("data", (data) => {
         stdoutData += data.toString();
@@ -70,8 +72,8 @@ ${runCommand}
 
       const timeoutId = setTimeout(() => {
         child.kill("SIGKILL");
-        resolve(`Execution Error: Time Limit Exceeded (7 seconds)`);
-      }, 7000);
+        resolve(`Execution Error: Time Limit Exceeded (${MAX_EXECUTION_TIME_IN_MS} milliseconds)`);
+      }, MAX_EXECUTION_TIME_IN_MS);
 
       child.on("close", () => {
         clearTimeout(timeoutId);
