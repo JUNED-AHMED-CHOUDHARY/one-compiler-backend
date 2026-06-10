@@ -1,12 +1,12 @@
 import { UserRole } from "@prisma/client";
 import { Router } from "express";
 
-import { createDraftProblemController, updateContentController } from "../controllers/problemController";
+import { createDraftProblemController, updateContentController, upsertProblemTemplatesController } from "../controllers/problemController";
 import asyncHandler from "../middlewares/asyncHandlerMiddleware";
 import { isUserAuthenticatedMiddleware, validateUserRoleMiddleware } from "../middlewares/authMiddleware";
 import { getProblemByIdMiddleware } from "../middlewares/problemsMiddleware";
 import { zodValidateBody, zodValidateParams } from "../middlewares/validateRequestMiddleware";
-import { createDraftProblemBodySchema, problemIdInParamSchema, UpdateContentBodySchema } from "../zodValidations/problemValidations";
+import { createDraftProblemBodySchema, problemIdInParamSchema, UpdateContentBodySchema, UpsertProblemTemplatesBodySchema } from "../zodValidations/problemValidations";
 
 const problemRoutes = Router();
 // step 1
@@ -31,6 +31,17 @@ problemRoutes.patch(
 );
 
 // step 2 part 2
-// upload a image or gif or video when user drop inside the markdown editor and call this api..
+// TODO: upload a image or gif or video when user drop inside the markdown editor and call this api..
+
+// step 3 tab 1
+problemRoutes.patch(
+  "/:problemId/templates",
+  asyncHandler(isUserAuthenticatedMiddleware),
+  validateUserRoleMiddleware([UserRole.ADMIN, UserRole.PROBLEM_SETTER]),
+  zodValidateParams(problemIdInParamSchema),
+  zodValidateBody(UpsertProblemTemplatesBodySchema),
+  asyncHandler(getProblemByIdMiddleware),
+  asyncHandler(upsertProblemTemplatesController)
+);
 
 export default problemRoutes;

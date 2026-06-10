@@ -1,4 +1,4 @@
-import { ProblemDifficulty } from "@prisma/client";
+import { ProblemDifficulty, ProgrammingLanguage } from "@prisma/client";
 import { z } from "zod";
 
 import { ID_PREFIXES } from "../constants/idPrefixes";
@@ -30,3 +30,17 @@ export const UpdateContentBodySchema = z.object({
 });
 
 export type UpdateContentBody = z.infer<typeof UpdateContentBodySchema>;
+
+export const UpsertProblemTemplatesBodySchema = z.object({
+  templates: z
+    .array(
+      z.object({
+        language: z.nativeEnum(ProgrammingLanguage),
+        user_visible_code: z.string().min(1, "Code cannot be empty"),
+        hidden_stub_code: z.string().min(1, "Stub cannot be empty")
+      })
+    )
+    .min(1, "You must provide at least one code template")
+});
+
+export type UpsertProblemTemplatesBody = z.infer<typeof UpsertProblemTemplatesBodySchema>;
