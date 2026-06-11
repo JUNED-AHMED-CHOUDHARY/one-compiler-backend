@@ -66,6 +66,15 @@ class ProblemServices {
       data: payload
     });
   }
+
+  static async updateProblem(problemId: ProblemIdInParam["problemId"], payload: Prisma.ProblemsUpdateInput) {
+    return await prisma.problems.update({
+      where: {
+        id: problemId
+      },
+      data: payload
+    });
+  }
 }
 
 export default ProblemServices;

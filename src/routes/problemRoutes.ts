@@ -1,12 +1,18 @@
 import { UserRole } from "@prisma/client";
 import { Router } from "express";
 
-import { createDraftProblemController, updateContentController, upsertProblemTemplatesController } from "../controllers/problemController";
+import { createDraftProblemController, evaluationSettingsController, updateContentController, upsertProblemTemplatesController } from "../controllers/problemController";
 import asyncHandler from "../middlewares/asyncHandlerMiddleware";
 import { isUserAuthenticatedMiddleware, validateUserRoleMiddleware } from "../middlewares/authMiddleware";
 import { getProblemByIdMiddleware } from "../middlewares/problemsMiddleware";
 import { zodValidateBody, zodValidateParams } from "../middlewares/validateRequestMiddleware";
-import { createDraftProblemBodySchema, problemIdInParamSchema, UpdateContentBodySchema, UpsertProblemTemplatesBodySchema } from "../zodValidations/problemValidations";
+import {
+  createDraftProblemBodySchema,
+  ProblemEvaluationSettingsBodySchema,
+  problemIdInParamSchema,
+  UpdateContentBodySchema,
+  UpsertProblemTemplatesBodySchema
+} from "../zodValidations/problemValidations";
 
 const problemRoutes = Router();
 // step 1
@@ -42,6 +48,17 @@ problemRoutes.patch(
   zodValidateBody(UpsertProblemTemplatesBodySchema),
   asyncHandler(getProblemByIdMiddleware),
   asyncHandler(upsertProblemTemplatesController)
+);
+
+// step 3 tab 2
+problemRoutes.patch(
+  "/:problemId/evaluation-settings",
+  asyncHandler(isUserAuthenticatedMiddleware),
+  validateUserRoleMiddleware([UserRole.ADMIN, UserRole.PROBLEM_SETTER]),
+  zodValidateParams(problemIdInParamSchema),
+  zodValidateBody(ProblemEvaluationSettingsBodySchema),
+  asyncHandler(getProblemByIdMiddleware),
+  asyncHandler(evaluationSettingsController)
 );
 
 export default problemRoutes;

@@ -1,4 +1,4 @@
-import { ProblemDifficulty, ProgrammingLanguage } from "@prisma/client";
+import { EvaluationType, ProblemDifficulty, ProgrammingLanguage } from "@prisma/client";
 import { z } from "zod";
 
 import { ID_PREFIXES } from "../constants/idPrefixes";
@@ -44,3 +44,22 @@ export const UpsertProblemTemplatesBodySchema = z.object({
 });
 
 export type UpsertProblemTemplatesBody = z.infer<typeof UpsertProblemTemplatesBodySchema>;
+
+export const ProblemEvaluationSettingsBodySchema = z
+  .object({
+    evaluation_type: z.enum(EvaluationType),
+    custom_checker_code: z.string().nullable().optional()
+  })
+  .superRefine((data, ctx) => {
+    const { evaluation_type, custom_checker_code } = data;
+
+    if (evaluation_type === EvaluationType.CUSTOM_CHECKER && !custom_checker_code) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["custom_checker_code"],
+        message: "Custom checker code is required when evaluation type is custom checker"
+      });
+    }
+  });
+
+export type ProblemEvaluationSettingsBody = z.infer<typeof ProblemEvaluationSettingsBodySchema>;

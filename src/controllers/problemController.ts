@@ -1,3 +1,4 @@
+import { EvaluationType } from "@prisma/client";
 import { NextFunction, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 
@@ -6,7 +7,7 @@ import ProblemServices from "../dbServices/problemServices";
 import TagServices from "../dbServices/TagServices";
 import CustomError from "../exceptions/custom-error";
 import { TypedRequestBody, TypedRequestParamsBody } from "../types/request";
-import { CreateDraftProblemBody, ProblemIdInParam, UpdateContentBody, UpsertProblemTemplatesBody } from "../zodValidations/problemValidations";
+import { CreateDraftProblemBody, ProblemEvaluationSettingsBody, ProblemIdInParam, UpdateContentBody, UpsertProblemTemplatesBody } from "../zodValidations/problemValidations";
 
 export const createDraftProblemController = async (req: TypedRequestBody<CreateDraftProblemBody>, res: Response, next: NextFunction) => {
   const user = req.user;
@@ -66,6 +67,25 @@ export const upsertProblemTemplatesController = async (req: TypedRequestParamsBo
     statusCode: StatusCodes.OK,
     message: "Templates updated successfully",
     data: updatedProblemTemplates
+  };
+
+  next();
+};
+
+export const evaluationSettingsController = async (req: TypedRequestParamsBody<ProblemIdInParam, ProblemEvaluationSettingsBody>, res: Response, next: NextFunction) => {
+  const { problemId } = req.params;
+
+  const payload = req.body;
+
+  if (payload.evaluation_type === EvaluationType.EXACT_MATCH) payload.custom_checker_code = null;
+
+  const updatedProblem = await ProblemServices.updateProblem(problemId, payload);
+
+  res.locals.responseData = {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: "Evaluation settings updated successfully",
+    data: updatedProblem
   };
 
   next();
