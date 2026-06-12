@@ -3,3 +3,9 @@ node_modules
 .env*
 package-lock.json
 /src/generated/prisma
+
+# testing purpose for zip and zip uploading and all
+/testingPurpose
+
+# temp folder me testcases folder hoga jo testcases zip ko store karega so use track na karo to behter hai
+/temp

@@ -1,9 +1,17 @@
 import { UserRole } from "@prisma/client";
 import { Router } from "express";
 
-import { createDraftProblemController, evaluationSettingsController, updateContentController, upsertProblemTemplatesController } from "../controllers/problemController";
+import { MULTER_UPLOAD_FIELD_NAME } from "../constants/middlewareConstants";
+import {
+  createDraftProblemController,
+  evaluationSettingsController,
+  updateContentController,
+  uploadTestCasesController,
+  upsertProblemTemplatesController
+} from "../controllers/problemController";
 import asyncHandler from "../middlewares/asyncHandlerMiddleware";
 import { isUserAuthenticatedMiddleware, validateUserRoleMiddleware } from "../middlewares/authMiddleware";
+import { uploadMulterTestCaseZip } from "../middlewares/multerMiddleware";
 import { getProblemByIdMiddleware } from "../middlewares/problemsMiddleware";
 import { zodValidateBody, zodValidateParams } from "../middlewares/validateRequestMiddleware";
 import {
@@ -59,6 +67,17 @@ problemRoutes.patch(
   zodValidateBody(ProblemEvaluationSettingsBodySchema),
   asyncHandler(getProblemByIdMiddleware),
   asyncHandler(evaluationSettingsController)
+);
+
+// step 3 tab 3
+problemRoutes.post(
+  "/:problemId/testcases-upload",
+  asyncHandler(isUserAuthenticatedMiddleware),
+  validateUserRoleMiddleware([UserRole.ADMIN, UserRole.PROBLEM_SETTER]),
+  zodValidateParams(problemIdInParamSchema),
+  uploadMulterTestCaseZip.single(MULTER_UPLOAD_FIELD_NAME),
+  asyncHandler(getProblemByIdMiddleware),
+  asyncHandler(uploadTestCasesController)
 );
 
 export default problemRoutes;
