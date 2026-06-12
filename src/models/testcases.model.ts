@@ -19,12 +19,18 @@ const testcaseSchema = new Schema(
       required: true,
       min: 0
     },
-    input_data: {
-      type: String,
+    test_case_number: {
+      type: Number,
+      required: true,
+      min: 1
+    },
+    // grid fs reference
+    input_data_gridfs_id: {
+      type: Schema.Types.ObjectId,
       required: true
     },
-    expected_output: {
-      type: String,
+    expected_output_gridfs_id: {
+      type: Schema.Types.ObjectId,
       default: null
     }
   },
@@ -34,6 +40,8 @@ const testcaseSchema = new Schema(
     versionKey: false
   }
 );
+
+testcaseSchema.index({ problem_id: 1, test_case_number: 1 });
 
 testcaseSchema.index({ problem_id: 1, is_hidden: 1 });
 
