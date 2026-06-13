@@ -1,6 +1,6 @@
 import { JobsOptions } from "bullmq";
 
-export type QUEUE_NAMES = "programming";
+export type QUEUE_NAMES = "programming" | "testcasesUpload";
 
 export const defaultJobOptions: JobsOptions = {
   attempts: 3,

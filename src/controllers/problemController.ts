@@ -6,7 +6,8 @@ import ProblemCodeTemplateServices from "../dbServices/problemCodeTemplateServic
 import ProblemServices from "../dbServices/problemServices";
 import TagServices from "../dbServices/TagServices";
 import CustomError from "../exceptions/custom-error";
-import { TypedRequestBody, TypedRequestParamsBody } from "../types/request";
+import { queueManager } from "../Queue/QueueManager";
+import { TypedRequestBody, TypedRequestParams, TypedRequestParamsBody } from "../types/request";
 import { CreateDraftProblemBody, ProblemEvaluationSettingsBody, ProblemIdInParam, UpdateContentBody, UpsertProblemTemplatesBody } from "../zodValidations/problemValidations";
 
 export const createDraftProblemController = async (req: TypedRequestBody<CreateDraftProblemBody>, res: Response, next: NextFunction) => {
@@ -86,6 +87,37 @@ export const evaluationSettingsController = async (req: TypedRequestParamsBody<P
     statusCode: StatusCodes.OK,
     message: "Evaluation settings updated successfully",
     data: updatedProblem
+  };
+
+  next();
+};
+
+export const uploadTestCasesController = async (req: TypedRequestParams<ProblemIdInParam>, res: Response, next: NextFunction) => {
+  const { problemId } = req.params;
+  const testcaseZipFile = req.file;
+
+  if (!testcaseZipFile) {
+    throw new CustomError("Test cases zip file is required", StatusCodes.BAD_REQUEST);
+  }
+
+  const testcasesUploadQueue = queueManager.getQueue("testcasesUpload");
+
+  const payload = {
+    problemId,
+    filePath: testcaseZipFile.path,
+    originalFileName: testcaseZipFile.originalname
+  };
+
+  const job = await testcasesUploadQueue.add("testcasesUpload", payload);
+
+  res.locals.responseData = {
+    success: true,
+    statusCode: StatusCodes.ACCEPTED,
+    message: "Zip file received. Extracting test cases in the background",
+    data: {
+      status: await job.getState(),
+      jobId: job.id
+    }
   };
 
   next();
