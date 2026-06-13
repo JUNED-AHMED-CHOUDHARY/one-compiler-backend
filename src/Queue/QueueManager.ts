@@ -1,8 +1,10 @@
 import { Processor, Queue, QueueOptions, Worker, WorkerOptions } from "bullmq";
+
+import ENV from "../config/ENV";
 import redisClient from "../config/redis";
 import { logger } from "../services/logger";
+
 import { defaultJobOptions, QUEUE_NAMES } from "./QueueNames";
-import ENV from "../config/ENV";
 
 class QueueManager {
   private static instance: QueueManager;
@@ -40,7 +42,7 @@ class QueueManager {
     const worker = new Worker(name, processor, {
       connection: redisClient as any,
       prefix: ENV.NODE_ENV,
-      useWorkerThreads: true,
+      useWorkerThreads: ENV.isRunningProd,
       ...opts
     });
 
@@ -55,7 +57,7 @@ class QueueManager {
     });
 
     worker.on("completed", (job, returnvalue) => {
-      logger.info(`✅ [${name}] Job ${job?.id} completed successfully. output :- ${returnvalue.output}`);
+      logger.info(`✅ [${name}] Job ${job?.id} completed successfully.`, { returnvalue });
     });
   }
 }

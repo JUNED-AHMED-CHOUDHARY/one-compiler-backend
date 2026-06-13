@@ -8,10 +8,9 @@ import { connectPrisma, disconnectPrisma } from "./config/prisma";
 import errorHandler from "./exceptions/error-handler";
 import notFoundHandler from "./exceptions/not-found-handler";
 import responseMiddlewareHandler from "./middlewares/responseMiddleware";
+import { registerWorkers } from "./Queue/workers/registerWorkers";
 import indexRoutes from "./routes/indexRoutes";
 import { logger, requestLoggerMiddleware } from "./services/logger";
-// register bullmq workers..
-import "./Queue/workers/registerWorkers";
 import { poolManager } from "./services/PoolManager";
 
 const app = express();
@@ -38,6 +37,7 @@ app.use(errorHandler);
 const startServer = async () => {
   try {
     await Promise.all([connectPrisma(), connectMongoDB(), poolManager.initialize()]);
+    registerWorkers(); // because worker was running before mongo connection was established causing failed testcases uploads retry throws error no bucket foundthats why !
     const server = app.listen(port, () => {
       logger.info("Server is running", { port });
     });

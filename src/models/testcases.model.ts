@@ -1,5 +1,7 @@
 import { model, models, Schema, type InferSchemaType, type Model } from "mongoose";
 
+import { TEST_CASE_MODEL_NAME } from "../constants/databaseConstants";
+
 const testcaseSchema = new Schema(
   {
     problem_id: {
@@ -47,6 +49,6 @@ testcaseSchema.index({ problem_id: 1, is_hidden: 1 });
 
 export type Testcase = InferSchemaType<typeof testcaseSchema>;
 
-const Testcases: Model<Testcase> = models.Testcases || model<Testcase>("Testcases", testcaseSchema);
+const Testcases: Model<Testcase> = models[TEST_CASE_MODEL_NAME] || model<Testcase>(TEST_CASE_MODEL_NAME, testcaseSchema);
 
 export default Testcases;
