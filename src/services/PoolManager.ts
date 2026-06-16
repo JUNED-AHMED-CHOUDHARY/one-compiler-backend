@@ -1,8 +1,10 @@
 import { spawn } from "node:child_process";
 
+import { ShutdownPriority } from "../types/services/shutdownManger";
 import { MAX_MEMORY_LIMIT_KB } from "../zodValidations/variablesUsedInValidations";
 
 import { logger } from "./logger";
+import { shutDownManager } from "./shutDownManager/shutDownManager";
 
 const POOL_CONFIG = {
   javascript: { image: "node:20-alpine", poolSize: 5 },
@@ -190,3 +192,17 @@ export class WarmPoolManager {
 }
 
 export const poolManager = WarmPoolManager.getInstance();
+
+shutDownManager.registerCleanupTask({
+  name: "DockerPoolManager",
+  priority: ShutdownPriority.HIGH,
+  task: async () => {
+    logger.info("Initiating cleanup of all active Docker sandbox containers...");
+    try {
+      await poolManager.cleanupAllContainers(true);
+      logger.info("Docker sandbox containers terminated successfully.");
+    } catch (error) {
+      logger.error("Failed to cleanup Docker containers during shutdown.", { error });
+    }
+  }
+});

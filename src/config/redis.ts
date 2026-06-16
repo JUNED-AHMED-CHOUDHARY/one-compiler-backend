@@ -1,6 +1,10 @@
 import Redis, { RedisOptions } from "ioredis";
-import ENV from "./ENV";
+
 import { logger } from "../services/logger";
+import { shutDownManager } from "../services/shutDownManager/shutDownManager";
+import { ShutdownPriority } from "../types/services/shutdownManger";
+
+import ENV from "./ENV";
 // ⚠️ CRITICAL UPSTASH + BULLMQ SETTINGS ⚠️
 const redisOptions: RedisOptions = {
   maxRetriesPerRequest: null,
@@ -45,5 +49,20 @@ class Client {
 }
 
 const redisClient = Client.getInstance();
+
+shutDownManager.registerCleanupTask({
+  name: "RedisClient",
+  priority: ShutdownPriority.LOW,
+  task: async () => {
+    logger.info("Gracefully quitting Redis connection...");
+    try {
+      await redisClient.quit();
+      logger.info("Redis disconnected successfully.");
+    } catch (error) {
+      logger.error("Error closing Redis connection. Forcing disconnect:", { error });
+      redisClient.disconnect();
+    }
+  }
+});
 
 export default redisClient;
