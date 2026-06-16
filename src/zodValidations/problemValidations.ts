@@ -63,3 +63,23 @@ export const ProblemEvaluationSettingsBodySchema = z
   });
 
 export type ProblemEvaluationSettingsBody = z.infer<typeof ProblemEvaluationSettingsBodySchema>;
+
+export const ReferenceSolutionBodySchema = z
+  .object({
+    // either reference_solution_code or reference_solution_language will come in the body
+    reference_solution_code: z.string().optional(),
+    reference_solution_language: z.enum(ProgrammingLanguage).optional()
+  })
+  .superRefine((data, ctx) => {
+    const { reference_solution_code, reference_solution_language } = data;
+
+    if (!reference_solution_code && !reference_solution_language) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["reference_solution_code", "reference_solution_language"],
+        message: "Either reference solution code or reference solution language is required"
+      });
+    }
+  });
+
+export type ReferenceSolutionBody = z.infer<typeof ReferenceSolutionBodySchema>;

@@ -8,7 +8,14 @@ import TagServices from "../dbServices/TagServices";
 import CustomError from "../exceptions/custom-error";
 import { queueManager } from "../Queue/QueueManager";
 import { TypedRequestBody, TypedRequestParams, TypedRequestParamsBody } from "../types/request";
-import { CreateDraftProblemBody, ProblemEvaluationSettingsBody, ProblemIdInParam, UpdateContentBody, UpsertProblemTemplatesBody } from "../zodValidations/problemValidations";
+import {
+  CreateDraftProblemBody,
+  ProblemEvaluationSettingsBody,
+  ProblemIdInParam,
+  ReferenceSolutionBody,
+  UpdateContentBody,
+  UpsertProblemTemplatesBody
+} from "../zodValidations/problemValidations";
 
 export const createDraftProblemController = async (req: TypedRequestBody<CreateDraftProblemBody>, res: Response, next: NextFunction) => {
   const user = req.user;
@@ -80,7 +87,7 @@ export const evaluationSettingsController = async (req: TypedRequestParamsBody<P
 
   if (payload.evaluation_type === EvaluationType.EXACT_MATCH) payload.custom_checker_code = null;
 
-  const updatedProblem = await ProblemServices.updateProblem(problemId, payload);
+  const updatedProblem = await ProblemServices.updateProblemById(problemId, payload);
 
   res.locals.responseData = {
     success: true,
@@ -118,6 +125,21 @@ export const uploadTestCasesController = async (req: TypedRequestParams<ProblemI
       status: await job.getState(),
       jobId: job.id
     }
+  };
+
+  next();
+};
+
+export const updateReferenceSolutionController = async (req: TypedRequestParamsBody<ProblemIdInParam, ReferenceSolutionBody>, res: Response, next: NextFunction) => {
+  const { problemId } = req.params;
+
+  const updatedProblem = await ProblemServices.updateProblemById(problemId, req.body);
+
+  res.locals.responseData = {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: "Reference solution updated successfully",
+    data: updatedProblem
   };
 
   next();
