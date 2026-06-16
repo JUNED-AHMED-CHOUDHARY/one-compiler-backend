@@ -67,7 +67,7 @@ class ProblemServices {
     });
   }
 
-  static async updateProblem(problemId: ProblemIdInParam["problemId"], payload: Prisma.ProblemsUpdateInput) {
+  static async updateProblemById(problemId: ProblemIdInParam["problemId"], payload: Prisma.ProblemsUpdateInput) {
     return await prisma.problems.update({
       where: {
         id: problemId

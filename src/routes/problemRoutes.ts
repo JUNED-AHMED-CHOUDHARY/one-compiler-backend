@@ -1,3 +1,4 @@
+// TODO : update status to draft if it was published or archived. (in the end add middleware inside -> res.locals.responseData.data -> updatedProblem)
 import { UserRole } from "@prisma/client";
 import { Router } from "express";
 
@@ -6,6 +7,7 @@ import {
   createDraftProblemController,
   evaluationSettingsController,
   updateContentController,
+  updateReferenceSolutionController,
   uploadTestCasesController,
   upsertProblemTemplatesController
 } from "../controllers/problemController";
@@ -18,6 +20,7 @@ import {
   createDraftProblemBodySchema,
   ProblemEvaluationSettingsBodySchema,
   problemIdInParamSchema,
+  ReferenceSolutionBodySchema,
   UpdateContentBodySchema,
   UpsertProblemTemplatesBodySchema
 } from "../zodValidations/problemValidations";
@@ -78,6 +81,16 @@ problemRoutes.post(
   uploadMulterTestCaseZip.single(MULTER_UPLOAD_FIELD_NAME),
   asyncHandler(getProblemByIdMiddleware),
   asyncHandler(uploadTestCasesController)
+);
+
+problemRoutes.post(
+  "/:problemId/reference-solution",
+  asyncHandler(isUserAuthenticatedMiddleware),
+  validateUserRoleMiddleware([UserRole.ADMIN, UserRole.PROBLEM_SETTER]),
+  zodValidateParams(problemIdInParamSchema),
+  zodValidateBody(ReferenceSolutionBodySchema),
+  asyncHandler(getProblemByIdMiddleware),
+  asyncHandler(updateReferenceSolutionController)
 );
 
 export default problemRoutes;
