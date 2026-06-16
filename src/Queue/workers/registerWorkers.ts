@@ -30,7 +30,7 @@ const workers: WorkerDefination[] = [
     concurrency: 1
   }
 ];
-
+// TODO: need to add the shutdown manager for the workers as well..
 export const registerWorkers = () => {
   workers.forEach(({ name, concurrency, processor }) => queueManager.createWorker(name, processor, { concurrency }));
 };

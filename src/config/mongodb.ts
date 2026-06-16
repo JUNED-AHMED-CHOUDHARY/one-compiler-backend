@@ -1,6 +1,10 @@
 import mongoose from "mongoose";
-import ENV from "./ENV";
+
 import { logger } from "../services/logger";
+import { shutDownManager } from "../services/shutDownManager/shutDownManager";
+import { ShutdownPriority } from "../types/services/shutdownManger";
+
+import ENV from "./ENV";
 
 export const connectMongoDB = async () => {
   if (!ENV.MONGODB_URI?.trim()) {
@@ -22,3 +26,17 @@ export const disconnectMongoDB = async () => {
     await mongoose.disconnect();
   }
 };
+
+shutDownManager.registerCleanupTask({
+  name: "MongoDb",
+  priority: ShutdownPriority.LOW,
+  task: async () => {
+    logger.info("Disconnecting MongoDB client");
+    try {
+      await disconnectMongoDB();
+      logger.info("MongoDB disconnected successfully");
+    } catch (error) {
+      logger.error("Error disconnecting mongoDB", { error });
+    }
+  }
+});

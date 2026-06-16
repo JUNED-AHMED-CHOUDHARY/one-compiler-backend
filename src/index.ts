@@ -3,8 +3,8 @@ import express from "express";
 import helmet from "helmet";
 
 import ENV from "./config/ENV";
-import { connectMongoDB, disconnectMongoDB } from "./config/mongodb";
-import { connectPrisma, disconnectPrisma } from "./config/prisma";
+import { connectMongoDB } from "./config/mongodb";
+import { connectPrisma } from "./config/prisma";
 import errorHandler from "./exceptions/error-handler";
 import notFoundHandler from "./exceptions/not-found-handler";
 import responseMiddlewareHandler from "./middlewares/responseMiddleware";
@@ -12,6 +12,8 @@ import { registerWorkers } from "./Queue/workers/registerWorkers";
 import indexRoutes from "./routes/indexRoutes";
 import { logger, requestLoggerMiddleware } from "./services/logger";
 import { poolManager } from "./services/PoolManager";
+import { shutDownManager } from "./services/shutDownManager/shutDownManager";
+import { ShutdownPriority } from "./types/services/shutdownManger";
 
 const app = express();
 const port = Number(ENV.PORT) || 7000;
@@ -46,35 +48,28 @@ const startServer = async () => {
       logger.error("HTTP server failed", { error });
       process.exit(1);
     });
+    shutDownManager.registerCleanupTask({
+      name: "Express Server",
+      priority: ShutdownPriority.NORMAL,
+      task: async () => {
+        return new Promise((resolve, reject) => {
+          logger.info("Closing Express HTTP server..");
 
-    // 1. GRACEFUL SHUTDOWN: Clean up containers if the server stops via terminal (Ctrl+C)
-    process.on("SIGINT", async () => {
-      await poolManager.cleanupAllContainers(true);
-      await disconnectMongoDB();
-      await disconnectPrisma();
-      process.exit(0);
-    });
+          server.close((err) => {
+            if (err) return reject(err);
+            resolve();
+          });
 
-    // 2. GRACEFUL SHUTDOWN: Clean up containers if killed by a process manager (PM2/Docker)
-    process.on("SIGTERM", async () => {
-      await poolManager.cleanupAllContainers(true);
-      await disconnectMongoDB();
-      await disconnectPrisma();
-      process.exit(0);
-    });
+          if ("closeIdleConnections" in server) server.closeIdleConnections();
 
-    // 4. CRASH SHUTDOWN: Clean up if a random bug crashes the server
-    process.on("uncaughtException", async (error) => {
-      logger.error("💥 Uncaught Exception! Shutting down gracefully...", { error });
-      await poolManager.cleanupAllContainers(true);
-      process.exit(1); // Exit with code 1 indicating a failure
-    });
-
-    // 5. PROMISE REJECTION: Clean up if an async function fails silently
-    process.on("unhandledRejection", async (reason) => {
-      logger.error("💥 Unhandled Promise Rejection! Shutting down gracefully...", { reason });
-      await poolManager.cleanupAllContainers(true);
-      process.exit(1);
+          setTimeout(() => {
+            logger.warn("Active HTTP connections persisting, forcefully terminating sockets.");
+            if ("closeAllConnections" in server) {
+              server.closeAllConnections();
+            }
+          }, 5000).unref();
+        });
+      }
     });
   } catch (error: unknown) {
     logger.error("Unknown Error.", { error });
