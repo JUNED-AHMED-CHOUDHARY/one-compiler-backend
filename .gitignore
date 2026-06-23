@@ -9,3 +9,4 @@ package-lock.json
 
 # temp folder me testcases folder hoga jo testcases zip ko store karega so use track na karo to behter hai
 /temp
+.cursor/
