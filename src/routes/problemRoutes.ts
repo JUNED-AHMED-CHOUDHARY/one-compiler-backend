@@ -9,7 +9,8 @@ import {
   updateContentController,
   updateReferenceSolutionController,
   uploadTestCasesController,
-  upsertProblemTemplatesController
+  upsertProblemTemplatesController,
+  verifyAndPublishProblemController
 } from "../controllers/problemController";
 import asyncHandler from "../middlewares/asyncHandlerMiddleware";
 import { isUserAuthenticatedMiddleware, validateUserRoleMiddleware } from "../middlewares/authMiddleware";
@@ -91,6 +92,16 @@ problemRoutes.post(
   zodValidateBody(ReferenceSolutionBodySchema),
   asyncHandler(getProblemByIdMiddleware),
   asyncHandler(updateReferenceSolutionController)
+);
+
+// final verify and publish the problem
+problemRoutes.post(
+  "/:problemId/verify-publish",
+  asyncHandler(isUserAuthenticatedMiddleware),
+  validateUserRoleMiddleware([UserRole.ADMIN, UserRole.PROBLEM_SETTER]),
+  zodValidateParams(problemIdInParamSchema),
+  asyncHandler(getProblemByIdMiddleware),
+  asyncHandler(verifyAndPublishProblemController)
 );
 
 export default problemRoutes;
