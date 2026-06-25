@@ -15,7 +15,6 @@ export interface CodeExecutionResult {
   stdout: string;
   stderr: string;
   exitCode: number | null;
-  // eslint-disable-next-line no-undef
   signal: NodeJS.Signals | null;
   timedOut: boolean;
   executionTimeMs: number;
@@ -94,7 +93,6 @@ ${runCommand}
         });
       }, timeoutMs);
 
-      // eslint-disable-next-line no-undef
       const settle = ({ exitCode, signal }: { exitCode: number | null; signal: NodeJS.Signals | null }) => {
         if (isSettled) return;
         isSettled = true;
