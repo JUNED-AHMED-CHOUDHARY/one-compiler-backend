@@ -8,7 +8,7 @@ export default [
   {
     files: ["**/*.{js,mjs,cjs,ts}"],
     languageOptions: {
-      globals: { ...globals.node, ...globals.jest },
+      globals: { ...globals.node, ...globals.jest, NodeJS: "readonly" },
       parser: tsParser,
       parserOptions: {
         ecmaVersion: "latest",
