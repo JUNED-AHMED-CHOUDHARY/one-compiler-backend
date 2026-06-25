@@ -144,3 +144,22 @@ export const updateReferenceSolutionController = async (req: TypedRequestParamsB
 
   next();
 };
+
+export const verifyAndPublishProblemController = async (req: TypedRequestParams<ProblemIdInParam>, res: Response, next: NextFunction) => {
+  const { problemId } = req.params;
+
+  const publishProblemVerificationQueue = queueManager.getQueue("PublishProblemVerification");
+  const job = await publishProblemVerificationQueue.add("PublishProblemVerification", { problemId });
+
+  res.locals.responseData = {
+    success: true,
+    statusCode: StatusCodes.ACCEPTED,
+    message: "Problem verification and publication in progress",
+    data: {
+      status: await job.getState(),
+      jobId: job.id
+    }
+  };
+
+  next();
+};

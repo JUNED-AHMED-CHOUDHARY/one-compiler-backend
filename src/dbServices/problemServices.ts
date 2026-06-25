@@ -22,6 +22,14 @@ class ProblemServices {
       }
     });
   }
+  static async getProblemByIdWithInclude<T extends Prisma.ProblemsInclude>(problemId: ProblemIdInParam["problemId"], include: T) {
+    return await prisma.problems.findUnique({
+      where: {
+        id: problemId
+      },
+      include
+    });
+  }
   static async getProblemBySlugName(slugName: string) {
     return await prisma.problems.findFirst({
       where: {
