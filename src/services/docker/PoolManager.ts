@@ -1,10 +1,9 @@
 import { spawn } from "node:child_process";
 
-import { ShutdownPriority } from "../types/services/shutdownManger";
-import { MAX_MEMORY_LIMIT_KB } from "../zodValidations/variablesUsedInValidations";
-
-import { logger } from "./logger";
-import { shutDownManager } from "./shutDownManager/shutDownManager";
+import { ShutdownPriority } from "../../types/services/shutdownManger";
+import { MAX_MEMORY_LIMIT_KB } from "../../zodValidations/variablesUsedInValidations";
+import { logger } from "../logger";
+import { shutDownManager } from "../shutDownManager/shutDownManager";
 
 const POOL_CONFIG = {
   javascript: { image: "node:20-alpine", poolSize: 5 },
@@ -14,7 +13,7 @@ const POOL_CONFIG = {
 
 const MAX_USES_PER_CONTAINER = 50;
 
-interface ContainerState {
+export interface ContainerState {
   name: string;
   language: string;
   uses: number;

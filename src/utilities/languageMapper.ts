@@ -1,6 +1,6 @@
 import { ProgrammingLanguage } from "@prisma/client";
 
-import { SUPPORTED_PROGRAMMING_LANGUAGES } from "../services/dockerRunner";
+import { SUPPORTED_PROGRAMMING_LANGUAGES } from "../services/docker/dockerRunner";
 
 type InstantiableError = new (message?: string) => Error;
 const PRISMA_TO_RUNNER_LANGUAGE_MAP: Record<ProgrammingLanguage, SUPPORTED_PROGRAMMING_LANGUAGES> = {

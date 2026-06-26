@@ -10,8 +10,8 @@ import notFoundHandler from "./exceptions/not-found-handler";
 import responseMiddlewareHandler from "./middlewares/responseMiddleware";
 import { registerWorkers } from "./Queue/workers/registerWorkers";
 import indexRoutes from "./routes/indexRoutes";
+import { poolManager } from "./services/docker/PoolManager";
 import { logger, requestLoggerMiddleware } from "./services/logger";
-import { poolManager } from "./services/PoolManager";
 import { shutDownManager } from "./services/shutDownManager/shutDownManager";
 import { ShutdownPriority } from "./types/services/shutdownManger";
 
