@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { QueryFilter } from "mongoose";
 
 import { TEST_CASES_BUCKET_NAME } from "../../constants/databaseConstants";
 import Testcases, { Testcase } from "../../models/testcases.model";
@@ -30,6 +30,13 @@ class TestCasesServices {
     }
 
     await Promise.all(bucketPromises);
+  }
+  static async checkExistsByQuery(query: QueryFilter<Testcase>) {
+    // Uses Mongoose exists() to return { _id } or null without pulling the whole doc
+    return await Testcases.exists(query);
+  }
+  static async getTestcasesByQuery(query: QueryFilter<Testcase>) {
+    return await Testcases.find(query).lean();
   }
 }
 

@@ -1,5 +1,6 @@
 import { Processor } from "bullmq";
-import { runProgrammingLanguagesCode } from "../../services/dockerRunner";
+
+import { runProgrammingLanguagesCode } from "../../services/docker/dockerRunner";
 
 const codeRunnerJob: Processor = async (job) => {
   console.log(`\n[Worker] Picked up Job ID: ${job.id}`);
