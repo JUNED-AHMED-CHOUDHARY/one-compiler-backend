@@ -1,14 +1,25 @@
-import { dockerExecutor } from "../../utilities/dockerUtils";
 import { MAX_EXECUTION_TIME_IN_MS } from "../../zodValidations/variablesUsedInValidations";
+import { logger } from "../logger";
 
-import { poolManager } from "./PoolManager"; // Make sure path is correct
+import { dockerExecutor } from "./containerExecutor";
+import { poolManager } from "./PoolManager";
+import { SUPPORTED_PROGRAMMING_LANGUAGES } from "./types";
 
-export type SUPPORTED_PROGRAMMING_LANGUAGES = "cpp" | "javascript" | "python";
+export type { SUPPORTED_PROGRAMMING_LANGUAGES };
 
 interface LanguageExecutionConfig {
   fileName: string;
-  runCommand: string;
+  // Playground: runs solution and returns stdout directly
+  playgroundRunCommand: string;
+  // Optional compile step (compiled languages only). Run once before any test execution.
+  compileCommand?: string;
+  // Judge single testcase: runs against input.txt, diffs against expected.txt inside container
+  judgeRunCommand: string;
+  // Harness judge: reads N + (input, expected)*N from stdin; prints SUCCESS:ALL_PASSED or FAIL:...
+  batchRunCommand: string;
 }
+
+const DIFF_NORMALIZE = "diff -w /workspace/actual.txt /workspace/expected.txt";
 
 export interface CodeExecutionResult {
   stdout: string;
@@ -20,24 +31,31 @@ export interface CodeExecutionResult {
   outputTruncated: boolean;
 }
 
-const getLanguageExecutionConfig = (language: SUPPORTED_PROGRAMMING_LANGUAGES): LanguageExecutionConfig => {
+export const getLanguageExecutionConfig = (language: SUPPORTED_PROGRAMMING_LANGUAGES): LanguageExecutionConfig => {
   switch (language) {
     case "cpp":
       return {
         fileName: "main.cpp",
-        runCommand: "g++ main.cpp -o main && chmod +x main && ./main < input.txt"
+        playgroundRunCommand: "g++ main.cpp -o main && chmod +x main && ./main < input.txt",
+        compileCommand: "g++ -O2 /workspace/main.cpp -o /workspace/main",
+        judgeRunCommand: `sh -c '/workspace/main < /workspace/input.txt > /workspace/actual.txt && ${DIFF_NORMALIZE}'`,
+        batchRunCommand: "/workspace/main"
       };
 
     case "javascript":
       return {
         fileName: "index.js",
-        runCommand: "node index.js < input.txt"
+        playgroundRunCommand: "node index.js < input.txt",
+        judgeRunCommand: `node index.js < input.txt > actual.txt && ${DIFF_NORMALIZE}`,
+        batchRunCommand: "node /workspace/index.js"
       };
 
     case "python":
       return {
         fileName: "main.py",
-        runCommand: "python main.py < input.txt"
+        playgroundRunCommand: "python main.py < input.txt",
+        judgeRunCommand: `python main.py < input.txt > actual.txt && ${DIFF_NORMALIZE}`,
+        batchRunCommand: "python /workspace/main.py"
       };
 
     default:
@@ -52,7 +70,7 @@ export const runCodeInContainer = async (
   stdin: string,
   timeoutMs = MAX_EXECUTION_TIME_IN_MS
 ): Promise<CodeExecutionResult> => {
-  const { fileName, runCommand } = getLanguageExecutionConfig(language);
+  const { fileName, playgroundRunCommand } = getLanguageExecutionConfig(language);
 
   // 1. Acquire a pre-warmed container. (Throws error if queue is exhausted, triggering BullMQ retry)
   const container = await poolManager.acquire(language);
@@ -87,14 +105,12 @@ export const runCodeInContainer = async (
     ]);
     return await dockerExecutor({
       container,
-      command: runCommand,
+      command: playgroundRunCommand,
       timeoutMs
     });
   } finally {
-    // 4. THE GUARANTEE: This runs no matter what happens above.
-    // It safely releases the container so it can be scrubbed and given to the next user.
     void poolManager.release(container).catch((err) => {
-      console.error(`[Job ${jobId}] Failed to release container ${container.name}:`, err);
+      logger.error(`[Job ${jobId}] Failed to release container ${container.name}:`, err);
     });
   }
 };

@@ -22,6 +22,25 @@ class ProblemServices {
       }
     });
   }
+
+  /** Lightweight fetch for judge/upload paths that only need harness GridFS identity. */
+  static async getProblemHarnessMeta(problemId: ProblemIdInParam["problemId"]) {
+    return await prisma.problems.findUnique({
+      where: { id: problemId },
+      select: {
+        id: true,
+        harness_payload_gridfs_id: true
+      }
+    });
+  }
+  static async getProblemByIdWithInclude<T extends Prisma.ProblemsInclude>(problemId: ProblemIdInParam["problemId"], include: T) {
+    return await prisma.problems.findUnique({
+      where: {
+        id: problemId
+      },
+      include
+    });
+  }
   static async getProblemBySlugName(slugName: string) {
     return await prisma.problems.findFirst({
       where: {
@@ -67,12 +86,17 @@ class ProblemServices {
     });
   }
 
-  static async updateProblemById(problemId: ProblemIdInParam["problemId"], payload: Prisma.ProblemsUpdateInput) {
+  static async updateProblemById<T extends Prisma.ProblemsSelect | undefined = undefined>(
+    problemId: ProblemIdInParam["problemId"],
+    payload: Prisma.ProblemsUpdateInput,
+    options?: { select?: T }
+  ) {
     return await prisma.problems.update({
       where: {
         id: problemId
       },
-      data: payload
+      data: payload,
+      ...(options?.select ? { select: options.select } : {})
     });
   }
 }

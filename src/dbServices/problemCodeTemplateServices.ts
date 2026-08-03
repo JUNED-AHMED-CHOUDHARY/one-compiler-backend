@@ -3,6 +3,8 @@ import { ID_PREFIXES } from "../constants/idPrefixes";
 import { generateId } from "../utilities/commonFunctions";
 import { ProblemIdInParam, UpsertProblemTemplatesBody } from "../zodValidations/problemValidations";
 
+export const USER_CODE_REPLACE_PLACEHOLDER_IN_HIDDEN_STUB_CODE = "{{USER_CODE}}";
+
 class ProblemCodeTemplateServices {
   static async upsertProblemTemplates(problemId: ProblemIdInParam["problemId"], templates: UpsertProblemTemplatesBody["templates"]) {
     const upsertPromises = templates.map((template) => {

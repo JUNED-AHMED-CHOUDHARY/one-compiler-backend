@@ -3,6 +3,7 @@ import { Processor } from "bullmq";
 import ENV from "../../config/ENV";
 import codeRunnerJob from "../jobs/codeRunnerJob";
 import testCasesUploadJob from "../jobs/testCasesUploadJob";
+import verifyAndPublishJob from "../jobs/verifyAndPublishJob";
 import { queueManager } from "../QueueManager";
 import { QUEUE_NAMES } from "../QueueNames";
 
@@ -18,6 +19,9 @@ const programmingProcessor: Processor | string = ENV.NODE_ENV === "development" 
 const testCasesUploadProcessorPath = require.resolve("../jobs/testCasesUploadJob");
 const testCasesUploadProcessor: Processor | string = ENV.NODE_ENV === "development" ? testCasesUploadJob : testCasesUploadProcessorPath;
 
+const verifyAndPublishProcessorPath = require.resolve("../jobs/verifyAndPublishJob");
+const verifyAndPublishProcessor: Processor | string = ENV.NODE_ENV === "development" ? verifyAndPublishJob : verifyAndPublishProcessorPath;
+
 const workers: WorkerDefination[] = [
   {
     name: "programming",
@@ -27,6 +31,11 @@ const workers: WorkerDefination[] = [
   {
     name: "testcasesUpload",
     processor: testCasesUploadProcessor,
+    concurrency: 1
+  },
+  {
+    name: "PublishProblemVerification",
+    processor: verifyAndPublishProcessor,
     concurrency: 1
   }
 ];

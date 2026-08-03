@@ -13,6 +13,8 @@ model Problems {
   reference_solution_language ProgrammingLanguage?
   evaluation_type             EvaluationType      @default(EXACT_MATCH)
   custom_checker_code         String?             @db.Text
+  // Mongo GridFS ObjectId (hex) of pre-built harness stdin blob for judging
+  harness_payload_gridfs_id   String?             @db.VarChar(24)
   meta_data                   Json                @default("{}")
   created_at                  DateTime            @default(now())
   updated_at                  DateTime            @updatedAt

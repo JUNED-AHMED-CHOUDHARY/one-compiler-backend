@@ -1,17 +1,21 @@
-import { spawn } from "node:child_process";
-
 import { ShutdownPriority } from "../../types/services/shutdownManger";
 import { MAX_MEMORY_LIMIT_KB } from "../../zodValidations/variablesUsedInValidations";
 import { logger } from "../logger";
 import { shutDownManager } from "../shutDownManager/shutDownManager";
 
+import { ContainerExec } from "./containerExec";
+import { dockerClient } from "./dockerClient";
+import { SUPPORTED_PROGRAMMING_LANGUAGES } from "./types";
+
 const POOL_CONFIG = {
   javascript: { image: "node:20-alpine", poolSize: 5 },
   python: { image: "python:3.11-alpine", poolSize: 5 },
   cpp: { image: "gcc:13", poolSize: 3 }
-};
+} as const;
 
 const MAX_USES_PER_CONTAINER = 50;
+const CPUS_PER_CONTAINER = 0.5;
+const MAX_ACQUIRE_REPLACEMENTS = 8;
 
 export interface ContainerState {
   name: string;
@@ -19,25 +23,9 @@ export interface ContainerState {
   uses: number;
 }
 
-const spawnAsync = (command: string, args: string[]): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const child = spawn(command, args);
-    let stdout = "";
-    let stderr = "";
-
-    child.stdout.on("data", (data) => (stdout += data.toString()));
-    child.stderr.on("data", (data) => (stderr += data.toString()));
-
-    child.on("close", (code) => {
-      if (code !== 0) {
-        reject(new Error(`Command failed with code ${code}: ${stderr}`));
-      } else {
-        resolve(stdout.trim());
-      }
-    });
-
-    child.on("error", (err) => reject(err));
-  });
+export type ReleaseOptions = {
+  /** Force recycle (TLE, crashed workload, contaminated sandbox). */
+  recycle?: boolean;
 };
 
 export class WarmPoolManager {
@@ -59,11 +47,9 @@ export class WarmPoolManager {
   }
 
   public async initialize() {
-    logger.info("🚀 Initializing Strict Docker Warm Pool...");
+    logger.info("🚀 Initializing Strict Docker Warm Pool (Engine API)...");
 
-    // Clean up old containers without permanently shutting down
     await this.cleanupAllContainers();
-
     this.isShuttingDown = false;
 
     const startupPromises: Promise<void>[] = [];
@@ -76,35 +62,36 @@ export class WarmPoolManager {
     }
 
     await Promise.allSettled(startupPromises);
-    logger.info("✅ Warm Pool initialized securely via spawn.");
+    logger.info("✅ Warm Pool initialized via Docker Engine API.");
   }
 
   private async spawnContainer(name: string, language: string, image: string): Promise<void> {
-    const args = [
-      "run",
-      "-d",
-      "--rm",
-      "--name",
-      name,
-      `--memory=${MAX_MEMORY_LIMIT_KB}kb`,
-      "--cpus=0.5",
-      "--network",
-      "none",
-      "--pids-limit",
-      "64",
-      "--read-only",
-      "--tmpfs",
-      "/workspace:rw,exec,nosuid,size=50m",
-      "-w",
-      "/workspace",
-      image,
-      "tail",
-      "-f",
-      "/dev/null"
-    ];
-
     try {
-      await spawnAsync("docker", args);
+      try {
+        await dockerClient.getContainer(name).remove({ force: true });
+      } catch {
+        /* not present */
+      }
+
+      const created = await dockerClient.createContainer({
+        name,
+        Image: image,
+        Cmd: ["tail", "-f", "/dev/null"],
+        WorkingDir: "/workspace",
+        HostConfig: {
+          Memory: MAX_MEMORY_LIMIT_KB * 1024,
+          NanoCpus: Math.floor(CPUS_PER_CONTAINER * 1e9),
+          NetworkMode: "none",
+          PidsLimit: 64,
+          ReadonlyRootfs: true,
+          AutoRemove: true,
+          Tmpfs: {
+            "/workspace": "rw,exec,nosuid,size=50m"
+          }
+        }
+      });
+
+      await created.start();
       this.freeContainers.get(language)?.push({ name, language, uses: 0 });
       logger.info(`🐳 Spun up idle container: ${name}`);
     } catch (error) {
@@ -112,7 +99,7 @@ export class WarmPoolManager {
     }
   }
 
-  public async acquire(language: string): Promise<ContainerState> {
+  public async acquire(language: SUPPORTED_PROGRAMMING_LANGUAGES, replacementsLeft = MAX_ACQUIRE_REPLACEMENTS): Promise<ContainerState> {
     if (this.isShuttingDown) throw new Error("Server is shutting down. Cannot acquire resources.");
 
     const queue = this.freeContainers.get(language);
@@ -123,43 +110,48 @@ export class WarmPoolManager {
     const container = queue.shift()!;
 
     try {
-      await spawnAsync("docker", ["exec", container.name, "echo", "alive"]);
+      await ContainerExec.runAndDrain(container.name, ["echo", "alive"]);
     } catch {
-      // FIX: Removed unused (_: any)
       logger.warn(`⚠️ Container ${container.name} failed health check. Replacing...`);
       await this.replaceContainer(container);
-      return this.acquire(language);
+
+      if (replacementsLeft <= 0) {
+        throw new Error(`Unable to acquire a healthy container for ${language} after repeated replacements.`);
+      }
+
+      return this.acquire(language, replacementsLeft - 1);
     }
 
     this.busyContainers.set(container.name, container);
     return container;
   }
 
-  async release(container: ContainerState) {
+  async release(container: ContainerState, options: ReleaseOptions = {}) {
     this.busyContainers.delete(container.name);
     container.uses += 1;
 
-    if (container.uses >= MAX_USES_PER_CONTAINER) {
-      logger.info(`♻️ Recycling container ${container.name} (Reached max uses)`);
-      await this.replaceContainer(container);
-    } else {
-      try {
-        await spawnAsync("docker", ["exec", container.name, "sh", "-c", "rm -rf /workspace/*"]);
-        this.freeContainers.get(container.language)?.push(container);
-      } catch {
-        // FIX: Removed unused (e)
-        logger.error(`Failed to scrub container ${container.name}. Forcing recycle.`);
-        await this.replaceContainer(container);
+    if (options.recycle || container.uses >= MAX_USES_PER_CONTAINER) {
+      if (container.uses >= MAX_USES_PER_CONTAINER) {
+        logger.info(`♻️ Recycling container ${container.name} (Reached max uses)`);
       }
+      await this.replaceContainer(container);
+      return;
+    }
+
+    try {
+      await ContainerExec.runAndDrain(container.name, ["sh", "-c", "rm -rf /workspace/*"]);
+      this.freeContainers.get(container.language)?.push(container);
+    } catch {
+      logger.error(`Failed to scrub container ${container.name}. Forcing recycle.`);
+      await this.replaceContainer(container);
     }
   }
 
   private async replaceContainer(container: ContainerState): Promise<void> {
     try {
-      await spawnAsync("docker", ["rm", "-f", container.name]);
+      await dockerClient.getContainer(container.name).remove({ force: true });
     } catch {
-      // FIX: Removed unused (_: any)
-      /* Ignore if dead */
+      /* already gone / AutoRemove */
     }
 
     const image = POOL_CONFIG[container.language as keyof typeof POOL_CONFIG].image;
@@ -177,12 +169,26 @@ export class WarmPoolManager {
 
     logger.info("\n🧹Sweeping up Warm Pool containers...");
     try {
-      const stdout = await spawnAsync("docker", ["ps", "-a", "-q", "--filter=name=warm_"]);
-      const containerIds = stdout.trim().split("\n").filter(Boolean);
+      const containers = await dockerClient.listContainers({
+        all: true,
+        filters: { name: ["warm_"] }
+      });
 
-      if (containerIds.length > 0) {
-        await spawnAsync("docker", ["rm", "-f", ...containerIds]);
-      }
+      await Promise.all(
+        containers.map(async (summary) => {
+          try {
+            await dockerClient.getContainer(summary.Id).remove({ force: true });
+          } catch {
+            /* ignore */
+          }
+        })
+      );
+
+      this.freeContainers.forEach((queue) => {
+        queue.length = 0;
+      });
+      this.busyContainers.clear();
+
       logger.info("🧼 Cleaned up all execution containers.");
     } catch (error) {
       logger.error("Error during cleanup:", error);
