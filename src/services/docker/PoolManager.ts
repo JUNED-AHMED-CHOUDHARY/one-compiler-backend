@@ -1,3 +1,4 @@
+import ENV from "../../config/ENV";
 import { ShutdownPriority } from "../../types/services/shutdownManger";
 import { MAX_MEMORY_LIMIT_KB } from "../../zodValidations/variablesUsedInValidations";
 import { logger } from "../logger";
@@ -8,9 +9,9 @@ import { dockerClient } from "./dockerClient";
 import { SUPPORTED_PROGRAMMING_LANGUAGES } from "./types";
 
 const POOL_CONFIG = {
-  javascript: { image: "node:20-alpine", poolSize: 5 },
-  python: { image: "python:3.11-alpine", poolSize: 5 },
-  cpp: { image: "gcc:13", poolSize: 3 }
+  javascript: { image: "node:20-alpine", poolSize: ENV.POOL_SIZE.JS_POOL_SIZE },
+  python: { image: "python:3.11-alpine", poolSize: ENV.POOL_SIZE.PYTHON_POOL_SIZE },
+  cpp: { image: "gcc:13", poolSize: ENV.POOL_SIZE.CPP_POOL_SIZE }
 } as const;
 
 const MAX_USES_PER_CONTAINER = 50;
