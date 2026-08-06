@@ -15,9 +15,9 @@ const ENV = {
   JWT_SECRET: process.env.JWT_SECRET as string,
   SHUTDOWN_TIMEOUT_IN_MS: Number(process.env.SHUTDOWN_TIMEOUT_IN_MS) || 7000,
   POOL_SIZE: {
-    JS_POOL_SIZE: process.env.JS_POOL_SIZE || 1,
-    PYTHON_POOL_SIZE: process.env.PYTHON_POOL_SIZE || 1,
-    CPP_POOL_SIZE: process.env.CPP_POOL_SIZE || 1
+    JS_POOL_SIZE: Number(process.env.JS_POOL_SIZE) || 1,
+    PYTHON_POOL_SIZE: Number(process.env.PYTHON_POOL_SIZE) || 1,
+    CPP_POOL_SIZE: Number(process.env.CPP_POOL_SIZE) || 1
   }
 } as const;
 
