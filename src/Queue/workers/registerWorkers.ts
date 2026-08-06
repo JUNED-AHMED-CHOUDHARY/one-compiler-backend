@@ -1,6 +1,5 @@
 import { Processor } from "bullmq";
 
-import ENV from "../../config/ENV";
 import codeRunnerJob from "../jobs/codeRunnerJob";
 import testCasesUploadJob from "../jobs/testCasesUploadJob";
 import verifyAndPublishJob from "../jobs/verifyAndPublishJob";
@@ -12,30 +11,22 @@ interface WorkerDefination {
   processor: Processor | string;
   concurrency: number;
 }
-
-const codeRunnerProcessorPath = require.resolve("../jobs/codeRunnerJob");
-const programmingProcessor: Processor | string = ENV.NODE_ENV === "development" ? codeRunnerJob : codeRunnerProcessorPath;
-
-const testCasesUploadProcessorPath = require.resolve("../jobs/testCasesUploadJob");
-const testCasesUploadProcessor: Processor | string = ENV.NODE_ENV === "development" ? testCasesUploadJob : testCasesUploadProcessorPath;
-
-const verifyAndPublishProcessorPath = require.resolve("../jobs/verifyAndPublishJob");
-const verifyAndPublishProcessor: Processor | string = ENV.NODE_ENV === "development" ? verifyAndPublishJob : verifyAndPublishProcessorPath;
+// TODO: in future require.resolve separate for production workers
 
 const workers: WorkerDefination[] = [
   {
     name: "programming",
-    processor: programmingProcessor,
+    processor: codeRunnerJob,
     concurrency: 10
   },
   {
     name: "testcasesUpload",
-    processor: testCasesUploadProcessor,
+    processor: testCasesUploadJob,
     concurrency: 1
   },
   {
     name: "PublishProblemVerification",
-    processor: verifyAndPublishProcessor,
+    processor: verifyAndPublishJob,
     concurrency: 1
   }
 ];
