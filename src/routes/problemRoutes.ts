@@ -6,6 +6,7 @@ import { MULTER_UPLOAD_FIELD_NAME } from "../constants/middlewareConstants";
 import {
   createDraftProblemController,
   evaluationSettingsController,
+  getProblemsListController,
   updateContentController,
   updateReferenceSolutionController,
   uploadTestCasesController,
@@ -16,9 +17,10 @@ import asyncHandler from "../middlewares/asyncHandlerMiddleware";
 import { isUserAuthenticatedMiddleware, validateUserRoleMiddleware } from "../middlewares/authMiddleware";
 import { uploadMulterTestCaseZip } from "../middlewares/multerMiddleware";
 import { getProblemByIdMiddleware } from "../middlewares/problemsMiddleware";
-import { zodValidateBody, zodValidateParams } from "../middlewares/validateRequestMiddleware";
+import { zodValidateBody, zodValidateParams, zodValidateQuery } from "../middlewares/validateRequestMiddleware";
 import {
   createDraftProblemBodySchema,
+  listProblemsQuerySchema,
   ProblemEvaluationSettingsBodySchema,
   problemIdInParamSchema,
   ReferenceSolutionBodySchema,
@@ -27,6 +29,11 @@ import {
 } from "../zodValidations/problemValidations";
 
 const problemRoutes = Router();
+
+// Learner / solver getters
+problemRoutes.get("/list", asyncHandler(isUserAuthenticatedMiddleware), zodValidateQuery(listProblemsQuerySchema), asyncHandler(getProblemsListController));
+
+// below setters routes...
 // step 1
 problemRoutes.post(
   "/create-draft-problem",

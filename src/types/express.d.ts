@@ -6,5 +6,7 @@ declare module "express-serve-static-core" {
   interface Request {
     user: UserInRequest;
     problem?: Problems;
+    /** Coerced query from zodValidateQuery (page/limit as numbers). */
+    validatedQuery?: unknown;
   }
 }
