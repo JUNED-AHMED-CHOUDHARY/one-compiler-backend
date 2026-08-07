@@ -45,7 +45,7 @@ class ProblemServices {
       tag_links: tag ? { some: { tag: { slug_name: tag } } } : undefined
     };
 
-    const [items, total] = await prisma.$transaction([
+    const [problems, total] = await prisma.$transaction([
       prisma.problems.findMany({
         where,
         select: PROBLEM_LIST_SELECT,
@@ -57,7 +57,7 @@ class ProblemServices {
     ]);
 
     return {
-      items,
+      problems,
       pagination: toOffsetPaginationMeta(page, limit, total)
     };
   }
