@@ -4,7 +4,14 @@ import { z } from "zod";
 import { ID_PREFIXES } from "../constants/idPrefixes";
 import { createIdSchema } from "../utilities/commonFunctions";
 
-import { MAX_EXECUTION_TIME_IN_MS, MAX_MEMORY_LIMIT_KB, MINIMUM_PROBLEM_NAME_SLUG_LENGTH } from "./variablesUsedInValidations";
+import {
+  DEFAULT_PROBLEMS_LIST_LIMIT,
+  DEFAULT_PROBLEMS_LIST_PAGE,
+  MAX_EXECUTION_TIME_IN_MS,
+  MAX_MEMORY_LIMIT_KB,
+  MAX_PROBLEMS_LIST_LIMIT,
+  MINIMUM_PROBLEM_NAME_SLUG_LENGTH
+} from "./variablesUsedInValidations";
 
 // params zodValidations
 export const problemIdInParamSchema = z.object({
@@ -83,3 +90,15 @@ export const ReferenceSolutionBodySchema = z
   });
 
 export type ReferenceSolutionBody = z.infer<typeof ReferenceSolutionBodySchema>;
+
+/** GET /problems/list — lean list filters + pagination-ready query. */
+export const listProblemsQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(DEFAULT_PROBLEMS_LIST_PAGE),
+  limit: z.coerce.number().int().min(1).max(MAX_PROBLEMS_LIST_LIMIT).default(DEFAULT_PROBLEMS_LIST_LIMIT),
+  /** Optional filter for future UI; ignored when omitted. */
+  difficulty: z.enum(ProblemDifficulty).optional(),
+  /** TopicTags.slug_name filter for future UI; ignored when omitted. */
+  tag: z.string().trim().min(1).optional()
+});
+
+export type ListProblemsQuery = z.infer<typeof listProblemsQuerySchema>;

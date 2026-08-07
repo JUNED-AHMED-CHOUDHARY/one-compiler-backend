@@ -1,10 +1,11 @@
-import { Prisma, ProblemDifficulty, TopicTags } from "@prisma/client";
+import { Prisma, ProblemDifficulty, ProblemStatus, TopicTags } from "@prisma/client";
 
 import prisma from "../config/prisma";
 import { ID_PREFIXES } from "../constants/idPrefixes";
 import { UserInRequest } from "../types/express";
 import { generateId } from "../utilities/commonFunctions";
-import { ProblemIdInParam } from "../zodValidations/problemValidations";
+import { toOffsetPaginationMeta, toOffsetSkip } from "../utilities/prismaPagination";
+import { ListProblemsQuery, ProblemIdInParam } from "../zodValidations/problemValidations";
 
 interface DraftProblemData {
   problem_name: string;
@@ -14,7 +15,53 @@ interface DraftProblemData {
   user: UserInRequest;
 }
 
+export const PROBLEM_LIST_SELECT = {
+  id: true,
+  problem_name: true,
+  problem_slug_name: true,
+  difficulty: true,
+  total_submissions: true,
+  total_accepted: true,
+  tag_links: {
+    select: {
+      tag: {
+        select: {
+          id: true,
+          name: true,
+          slug_name: true
+        }
+      }
+    }
+  }
+} satisfies Prisma.ProblemsSelect;
+
+export type ProblemListRow = Prisma.ProblemsGetPayload<{ select: typeof PROBLEM_LIST_SELECT }>;
+
 class ProblemServices {
+  static async listPublishedProblems({ page, limit, difficulty, tag }: ListProblemsQuery) {
+    const where: Prisma.ProblemsWhereInput = {
+      status: ProblemStatus.PUBLISHED,
+      difficulty,
+      tag_links: tag ? { some: { tag: { slug_name: tag } } } : undefined
+    };
+
+    const [items, total] = await prisma.$transaction([
+      prisma.problems.findMany({
+        where,
+        select: PROBLEM_LIST_SELECT,
+        orderBy: [{ created_at: "desc" }, { id: "desc" }],
+        skip: toOffsetSkip(page, limit),
+        take: limit
+      }),
+      prisma.problems.count({ where })
+    ]);
+
+    return {
+      items,
+      pagination: toOffsetPaginationMeta(page, limit, total)
+    };
+  }
+
   static async getProblemById(problemId: ProblemIdInParam["problemId"]) {
     return await prisma.problems.findUnique({
       where: {

@@ -1,5 +1,5 @@
 import { EvaluationType } from "@prisma/client";
-import { NextFunction, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 
 import ProblemCodeTemplateServices from "../dbServices/problemCodeTemplateServices";
@@ -10,6 +10,7 @@ import { queueManager } from "../Queue/QueueManager";
 import { TypedRequestBody, TypedRequestParams, TypedRequestParamsBody } from "../types/request";
 import {
   CreateDraftProblemBody,
+  ListProblemsQuery,
   ProblemEvaluationSettingsBody,
   ProblemIdInParam,
   ReferenceSolutionBody,
@@ -17,6 +18,22 @@ import {
   UpsertProblemTemplatesBody
 } from "../zodValidations/problemValidations";
 
+// Learner / solver routes
+
+export const getProblemsListController = async (req: Request, res: Response, next: NextFunction) => {
+  const listResult = await ProblemServices.listPublishedProblems(req.validatedQuery as ListProblemsQuery);
+
+  res.locals.responseData = {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: "Problems fetched successfully",
+    data: listResult
+  };
+
+  next();
+};
+
+// below setters controllers...
 export const createDraftProblemController = async (req: TypedRequestBody<CreateDraftProblemBody>, res: Response, next: NextFunction) => {
   const user = req.user;
   const { problem_slug_name, tag_links } = req.body;

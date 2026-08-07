@@ -10,6 +10,6 @@ const indexRoutes = Router();
 indexRoutes.use("/auth", authRoutes);
 indexRoutes.use("/code", codeRoutes);
 indexRoutes.use("/health", healthRouter);
-indexRoutes.use("/problem", problemRoutes);
+indexRoutes.use("/problems", problemRoutes);
 
 export default indexRoutes;

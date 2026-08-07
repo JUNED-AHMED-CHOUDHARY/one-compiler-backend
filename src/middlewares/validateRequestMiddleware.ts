@@ -44,3 +44,21 @@ export const zodValidateParams = (schema: ZodType) => {
     next();
   };
 };
+
+export const zodValidateQuery = (schema: ZodType) => {
+  return (req: Request, _res: Response, next: NextFunction) => {
+    const result = schema.safeParse(req.query);
+
+    if (!result.success) {
+      return next(
+        new CustomError("Validation failed", StatusCodes.BAD_REQUEST, {
+          errors: formatErrorMessages(result.error.issues)
+        })
+      );
+    }
+
+    // Coerced output for controllers; leave Express req.query (ParsedQs) untouched.
+    req.validatedQuery = result.data;
+    return next();
+  };
+};

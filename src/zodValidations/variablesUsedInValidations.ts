@@ -3,6 +3,11 @@ export const MAXIMUM_PASSWORD_LENGTH = 128;
 export const MINIMUM_NAME_LENGTH = 2;
 export const MINIMUM_PROBLEM_NAME_SLUG_LENGTH = 3;
 
+/** Learner problem list defaults (query params). */
+export const DEFAULT_PROBLEMS_LIST_PAGE = 1;
+export const DEFAULT_PROBLEMS_LIST_LIMIT = 20;
+export const MAX_PROBLEMS_LIST_LIMIT = 100;
+
 // execution
 export const MAX_EXECUTION_TIME_IN_MS = 7000; // 7 seconds
 export const MAX_OUTPUT_LENGTH = 500 * 1024; // 500KB
