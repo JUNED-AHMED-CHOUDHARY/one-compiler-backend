@@ -20,6 +20,13 @@ export const problemIdInParamSchema = z.object({
 
 export type ProblemIdInParam = z.infer<typeof problemIdInParamSchema>;
 
+/** GET /problems/:problem_slug_name — learner solve page lookup by slug. */
+export const problemSlugNameInParamSchema = z.object({
+  problem_slug_name: z.string().trim().min(MINIMUM_PROBLEM_NAME_SLUG_LENGTH)
+});
+
+export type ProblemSlugNameInParam = z.infer<typeof problemSlugNameInParamSchema>;
+
 // body zodValidations
 export const createDraftProblemBodySchema = z.object({
   problem_name: z.string().min(MINIMUM_PROBLEM_NAME_SLUG_LENGTH),

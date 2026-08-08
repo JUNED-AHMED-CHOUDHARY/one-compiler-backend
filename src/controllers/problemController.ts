@@ -1,8 +1,10 @@
-import { EvaluationType } from "@prisma/client";
+import { EvaluationType, ProblemStatus } from "@prisma/client";
 import { NextFunction, Request, Response } from "express";
+import { NotFound } from "http-errors";
 import { StatusCodes } from "http-status-codes";
 
 import ProblemCodeTemplateServices from "../dbServices/problemCodeTemplateServices";
+import { PROBLEM_SELECTS } from "../dbServices/problemSelects";
 import ProblemServices from "../dbServices/problemServices";
 import TagServices from "../dbServices/TagServices";
 import CustomError from "../exceptions/custom-error";
@@ -13,6 +15,7 @@ import {
   ListProblemsQuery,
   ProblemEvaluationSettingsBody,
   ProblemIdInParam,
+  ProblemSlugNameInParam,
   ReferenceSolutionBody,
   UpdateContentBody,
   UpsertProblemTemplatesBody
@@ -28,6 +31,25 @@ export const getProblemsListController = async (req: Request, res: Response, nex
     statusCode: StatusCodes.OK,
     message: "Problems fetched successfully",
     data: listResult
+  };
+
+  next();
+};
+
+export const getProblemBySlugController = async (req: TypedRequestParams<ProblemSlugNameInParam>, res: Response, next: NextFunction) => {
+  const { status, problem_slug_name } = req.problem!;
+
+  if (status !== ProblemStatus.PUBLISHED) {
+    throw new NotFound("Problem not found");
+  }
+
+  const detail = await ProblemServices.getProblemBySlugName(problem_slug_name, PROBLEM_SELECTS.detail);
+
+  res.locals.responseData = {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: "Problem fetched successfully",
+    data: detail
   };
 
   next();

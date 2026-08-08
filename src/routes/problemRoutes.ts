@@ -6,6 +6,7 @@ import { MULTER_UPLOAD_FIELD_NAME } from "../constants/middlewareConstants";
 import {
   createDraftProblemController,
   evaluationSettingsController,
+  getProblemBySlugController,
   getProblemsListController,
   updateContentController,
   updateReferenceSolutionController,
@@ -16,13 +17,14 @@ import {
 import asyncHandler from "../middlewares/asyncHandlerMiddleware";
 import { isUserAuthenticatedMiddleware, validateUserRoleMiddleware } from "../middlewares/authMiddleware";
 import { uploadMulterTestCaseZip } from "../middlewares/multerMiddleware";
-import { getProblemByIdMiddleware } from "../middlewares/problemsMiddleware";
+import { getProblemByIdMiddleware, getProblemBySlugMiddleware } from "../middlewares/problemsMiddleware";
 import { zodValidateBody, zodValidateParams, zodValidateQuery } from "../middlewares/validateRequestMiddleware";
 import {
   createDraftProblemBodySchema,
   listProblemsQuerySchema,
   ProblemEvaluationSettingsBodySchema,
   problemIdInParamSchema,
+  problemSlugNameInParamSchema,
   ReferenceSolutionBodySchema,
   UpdateContentBodySchema,
   UpsertProblemTemplatesBodySchema
@@ -32,7 +34,13 @@ const problemRoutes = Router();
 
 // Learner / solver getters
 problemRoutes.get("/list", asyncHandler(isUserAuthenticatedMiddleware), zodValidateQuery(listProblemsQuerySchema), asyncHandler(getProblemsListController));
-
+problemRoutes.get(
+  "/:problem_slug_name",
+  asyncHandler(isUserAuthenticatedMiddleware),
+  zodValidateParams(problemSlugNameInParamSchema),
+  asyncHandler(getProblemBySlugMiddleware),
+  asyncHandler(getProblemBySlugController)
+);
 // below setters routes...
 // step 1
 problemRoutes.post(
