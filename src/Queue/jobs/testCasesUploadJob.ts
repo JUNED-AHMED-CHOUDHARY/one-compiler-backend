@@ -9,6 +9,7 @@ import unzipper, { type Entry } from "unzipper";
 
 import { GRIDFS_IO_CONCURRENCY } from "../../constants/databaseConstants";
 import TestCasesServices from "../../dbServices/mongo/testCasesServices";
+import { PROBLEM_SELECTS } from "../../dbServices/problemSelects";
 import ProblemServices from "../../dbServices/problemServices";
 import { Testcase } from "../../models/testcases.model";
 import { HarnessCaseRefs, HarnessPayloadBuilder } from "../../services/judge/buildHarnessPayload";
@@ -69,7 +70,7 @@ const testCasesUploadJob: Processor = async (job: Job) => {
   try {
     logger.info(`[BullMQ] Starting parallelized test cases upload for problem ${problemId}`, { filePath });
 
-    const problem = await ProblemServices.getProblemHarnessMeta(problemId);
+    const problem = await ProblemServices.getProblemById(problemId, PROBLEM_SELECTS.harness);
     if (!problem) throw new Error(`Problem ${problemId} not found`);
 
     const previousHarnessId = problem.harness_payload_gridfs_id;
@@ -197,7 +198,7 @@ const testCasesUploadJob: Processor = async (job: Job) => {
         await TestCasesServices.deleteGridFsFileById(uploadedHarnessId);
       }
     } else if (uploadedHarnessId) {
-      const latest = await ProblemServices.getProblemHarnessMeta(problemId).catch(() => null);
+      const latest = await ProblemServices.getProblemById(problemId, PROBLEM_SELECTS.harness).catch(() => null);
       if (latest && latest.harness_payload_gridfs_id !== uploadedHarnessId.toHexString()) {
         await TestCasesServices.deleteGridFsFileById(uploadedHarnessId);
       }

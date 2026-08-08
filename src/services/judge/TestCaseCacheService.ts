@@ -2,6 +2,7 @@ import fsPromises from "node:fs/promises";
 import path from "node:path";
 
 import { HARNESS_CACHE_DIR } from "../../constants/middlewareConstants";
+import { PROBLEM_SELECTS } from "../../dbServices/problemSelects";
 import ProblemServices from "../../dbServices/problemServices";
 import { logger } from "../logger";
 
@@ -56,7 +57,7 @@ export class TestCaseCacheService {
     const absolutePath = this.cachePathFor(problemId);
     const metaPath = this.metaPathFor(problemId);
 
-    const problem = await ProblemServices.getProblemHarnessMeta(problemId);
+    const problem = await ProblemServices.getProblemById(problemId, PROBLEM_SELECTS.harness);
     if (!problem?.harness_payload_gridfs_id) {
       throw new Error(`Harness payload missing for problem ${problemId}. Re-upload testcases to generate the pre-built harness file.`);
     }
