@@ -63,6 +63,12 @@ export const getLanguageExecutionConfig = (language: SUPPORTED_PROGRAMMING_LANGU
   }
 };
 
+export const formatCodeExecutionOutput = (result: CodeExecutionResult, timeoutMs: number): string => {
+  if (result.timedOut) return `Execution Error: Time Limit Exceeded (${timeoutMs} milliseconds)`;
+  if (result.stderr) return result.stderr;
+  return result.stdout;
+};
+
 export const runCodeInContainer = async (
   jobId: string,
   language: SUPPORTED_PROGRAMMING_LANGUAGES,
@@ -118,10 +124,5 @@ export const runCodeInContainer = async (
 export const runProgrammingLanguagesCode = async (jobId: string, language: SUPPORTED_PROGRAMMING_LANGUAGES, code: string, stdin: string): Promise<string> => {
   const result = await runCodeInContainer(jobId, language, code, stdin);
 
-  if (result.timedOut) return `Execution Error: Time Limit Exceeded (${MAX_EXECUTION_TIME_IN_MS} milliseconds)`;
-
-  // Preserve the old playground behavior: stderr wins, otherwise return stdout.
-  if (result.stderr) return result.stderr;
-
-  return result.stdout;
+  return formatCodeExecutionOutput(result, MAX_EXECUTION_TIME_IN_MS);
 };

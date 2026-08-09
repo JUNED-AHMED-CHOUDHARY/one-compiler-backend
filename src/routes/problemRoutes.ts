@@ -14,11 +14,13 @@ import {
   upsertProblemTemplatesController,
   verifyAndPublishProblemController
 } from "../controllers/problemController";
+import { runProblemCodeController } from "../controllers/problemRunController";
 import asyncHandler from "../middlewares/asyncHandlerMiddleware";
 import { isUserAuthenticatedMiddleware, validateUserRoleMiddleware } from "../middlewares/authMiddleware";
 import { uploadMulterTestCaseZip } from "../middlewares/multerMiddleware";
 import { getProblemByIdMiddleware, getProblemBySlugMiddleware } from "../middlewares/problemsMiddleware";
 import { zodValidateBody, zodValidateParams, zodValidateQuery } from "../middlewares/validateRequestMiddleware";
+import { problemRunBodySchema } from "../zodValidations/problemRunValidations";
 import {
   createDraftProblemBodySchema,
   listProblemsQuerySchema,
@@ -41,6 +43,17 @@ problemRoutes.get(
   asyncHandler(getProblemBySlugMiddleware),
   asyncHandler(getProblemBySlugController)
 );
+
+// Learner run — custom stdin against assembled problem harness (phase 1)
+problemRoutes.post(
+  "/:problemId/run",
+  asyncHandler(isUserAuthenticatedMiddleware),
+  zodValidateParams(problemIdInParamSchema),
+  zodValidateBody(problemRunBodySchema),
+  asyncHandler(getProblemByIdMiddleware),
+  asyncHandler(runProblemCodeController)
+);
+
 // below setters routes...
 // step 1
 problemRoutes.post(
