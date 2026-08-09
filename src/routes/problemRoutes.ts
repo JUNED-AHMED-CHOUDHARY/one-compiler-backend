@@ -35,7 +35,7 @@ const problemRoutes = Router();
 // Learner / solver getters
 problemRoutes.get("/list", asyncHandler(isUserAuthenticatedMiddleware), zodValidateQuery(listProblemsQuerySchema), asyncHandler(getProblemsListController));
 problemRoutes.get(
-  "/:problem_slug_name/get",
+  "/get/:problem_slug_name",
   asyncHandler(isUserAuthenticatedMiddleware),
   zodValidateParams(problemSlugNameInParamSchema),
   asyncHandler(getProblemBySlugMiddleware),
