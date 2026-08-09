@@ -40,7 +40,7 @@ export const getProblemBySlugController = async (req: TypedRequestParams<Problem
   const { status, problem_slug_name } = req.problem!;
 
   if (status !== ProblemStatus.PUBLISHED) {
-    throw new NotFound("Problem not found");
+    throw new NotFound("Either Problem is not published or not found");
   }
 
   const detail = await ProblemServices.getProblemBySlugName(problem_slug_name, PROBLEM_SELECTS.detail);
