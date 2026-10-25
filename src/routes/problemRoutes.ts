@@ -9,6 +9,7 @@ import {
   getProblemBySlugController,
   getProblemsListController,
   updateContentController,
+  updateProblemParamsController,
   updateReferenceSolutionController,
   uploadTestCasesController,
   upsertProblemTemplatesController,
@@ -26,6 +27,7 @@ import {
   listProblemsQuerySchema,
   ProblemEvaluationSettingsBodySchema,
   problemIdInParamSchema,
+  ProblemParamsBodySchema,
   problemSlugNameInParamSchema,
   ReferenceSolutionBodySchema,
   UpdateContentBodySchema,
@@ -44,7 +46,7 @@ problemRoutes.get(
   asyncHandler(getProblemBySlugController)
 );
 
-// Learner run — custom stdin against assembled problem harness (phase 1)
+// Learner run — samples + custom testcases through the stub's run mode (expected output from samples / reference solution)
 problemRoutes.post(
   "/:problemId/run",
   asyncHandler(isUserAuthenticatedMiddleware),
@@ -99,6 +101,17 @@ problemRoutes.patch(
   zodValidateBody(ProblemEvaluationSettingsBodySchema),
   asyncHandler(getProblemByIdMiddleware),
   asyncHandler(evaluationSettingsController)
+);
+
+// step 3 tab 2.5 — param names (stdin line order) for the learner's testcase boxes
+problemRoutes.patch(
+  "/:problemId/params",
+  asyncHandler(isUserAuthenticatedMiddleware),
+  validateUserRoleMiddleware([UserRole.ADMIN, UserRole.PROBLEM_SETTER]),
+  zodValidateParams(problemIdInParamSchema),
+  zodValidateBody(ProblemParamsBodySchema),
+  asyncHandler(getProblemByIdMiddleware),
+  asyncHandler(updateProblemParamsController)
 );
 
 // step 3 tab 3

@@ -2,11 +2,21 @@ import { EvaluationType, Prisma, ProblemStatus } from "@prisma/client";
 import { UnrecoverableError } from "bullmq";
 
 import TestCasesServices from "../../dbServices/mongo/testCasesServices";
+import { getProblemMetaData } from "../../utilities/problemMetaData";
 import { ProblemIdInParam } from "../../zodValidations/problemValidations";
 
 export const verifyProblemToBePublishedBasicChecks = (problem: Prisma.ProblemsGetPayload<{ include: { code_templates: true } }>) => {
-  const { status, code_templates, evaluation_type, reference_solution_language, reference_solution_code, custom_checker_code, problem_description, harness_payload_gridfs_id } =
-    problem;
+  const {
+    status,
+    code_templates,
+    evaluation_type,
+    reference_solution_language,
+    reference_solution_code,
+    custom_checker_code,
+    problem_description,
+    harness_payload_gridfs_id,
+    meta_data
+  } = problem;
 
   if (status !== ProblemStatus.DRAFT) throw new UnrecoverableError("Problem is not in draft status");
 
@@ -28,6 +38,10 @@ export const verifyProblemToBePublishedBasicChecks = (problem: Prisma.ProblemsGe
 
   if (!harness_payload_gridfs_id) {
     throw new UnrecoverableError("Harness payload is missing. Re-upload testcases before publishing.");
+  }
+
+  if (!getProblemMetaData(meta_data).sample_testcases?.length) {
+    throw new UnrecoverableError("At least one sample testcase is required. Add sample_input_<n>.in / sample_expected_<n>.out to the testcases zip.");
   }
 };
 

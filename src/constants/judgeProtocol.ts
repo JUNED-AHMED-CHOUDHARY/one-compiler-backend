@@ -74,3 +74,61 @@ export const parseHarnessVerdict = (stdout: string): HarnessVerdict => {
 
   return { status: "invalid", raw: verdictLine || stdout.trim() };
 };
+
+/**
+ * Run mode (`<batchRunCommand> --run`) — powers the learner "Run" button (samples + custom testcases).
+ *
+ * Stdin layout:
+ *   <N>
+ *   <testcase 1 input>
+ *   ...
+ *   <testcase N input>          (no expected lines — the judge compares outside the stub)
+ *
+ * For each case the stub prints, flushing stdout after each marker:
+ *   @@CASE@@                    before calling the solution
+ *   ...whatever the solution prints...
+ *   @@RESULT@@<serialized return value>
+ */
+export const RUN_MODE_FLAG = "--run";
+const RUN_MODE_MARKER = /@@(CASE|RESULT)@@/g;
+
+/** `output` is null when the case started but never produced a result (crash / TLE). */
+export type RunModeCase = { stdout: string; output: string | null };
+
+export const buildRunModeStdin = (inputs: string[]): string => `${inputs.length}\n${inputs.map((input) => `${input.replace(/\s+$/u, "")}\n`).join("")}`;
+
+export const parseRunModeOutput = (stdout: string): RunModeCase[] => {
+  const cases: RunModeCase[] = [];
+  let caseStart: number | null = null;
+
+  for (const match of stdout.matchAll(RUN_MODE_MARKER)) {
+    const [marker, kind] = match;
+
+    if (kind === "CASE") {
+      if (caseStart !== null) cases.push({ stdout: stdout.slice(caseStart, match.index).trim(), output: null });
+      caseStart = match.index + marker.length;
+      continue;
+    }
+
+    if (caseStart === null) continue;
+
+    const valueEnd = stdout.indexOf("\n", match.index);
+    cases.push({
+      stdout: stdout.slice(caseStart, match.index).trim(),
+      output: stdout.slice(match.index + marker.length, valueEnd < 0 ? undefined : valueEnd).trim()
+    });
+    caseStart = null;
+  }
+
+  if (caseStart !== null) cases.push({ stdout: stdout.slice(caseStart).trim(), output: null });
+
+  return cases;
+};
+
+/** Whitespace-insensitive equality — same leniency as the harness/diff -w judge paths. */
+const collapseWhitespace = (value: string) => value.trim().split(/\s+/u).join(" ");
+
+export const isSameOutput = (actual: string | null | undefined, expected: string | null | undefined): boolean =>
+  actual != null && expected != null && collapseWhitespace(actual) === collapseWhitespace(expected);
+
+export const testcaseInputKey = collapseWhitespace;

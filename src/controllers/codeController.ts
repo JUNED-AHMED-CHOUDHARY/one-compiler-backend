@@ -40,10 +40,11 @@ export const getExecutionResult = async (req: Request, res: Response) => {
 
   switch (jobState) {
     case "completed": {
-      const returnedValue = job.returnvalue?.output ?? "";
+      // playground jobs return { output }, problem runs return { verdict, error?, cases? }
+      const returnedValue = job.returnvalue;
       return res.status(StatusCodes.OK).json({
         status: returnedValue ? jobState : "active",
-        output: returnedValue
+        ...returnedValue
       });
     }
 

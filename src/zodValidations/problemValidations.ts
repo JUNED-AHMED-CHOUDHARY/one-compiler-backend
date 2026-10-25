@@ -98,6 +98,21 @@ export const ReferenceSolutionBodySchema = z
 
 export type ReferenceSolutionBody = z.infer<typeof ReferenceSolutionBodySchema>;
 
+/** PATCH /problems/:problemId/params — param names in stdin line order; labels the learner's testcase boxes. */
+export const ProblemParamsBodySchema = z.object({
+  params: z
+    .array(
+      z
+        .string()
+        .trim()
+        .regex(/^[A-Za-z_]\w*$/u, "Param name must be a valid identifier")
+    )
+    .min(1, "At least one param is required")
+    .refine((params) => new Set(params).size === params.length, "Param names must be unique")
+});
+
+export type ProblemParamsBody = z.infer<typeof ProblemParamsBodySchema>;
+
 /** GET /problems/list — lean list filters + pagination-ready query. */
 export const listProblemsQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(DEFAULT_PROBLEMS_LIST_PAGE),

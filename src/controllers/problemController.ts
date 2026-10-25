@@ -10,11 +10,13 @@ import TagServices from "../dbServices/TagServices";
 import CustomError from "../exceptions/custom-error";
 import { queueManager } from "../Queue/QueueManager";
 import { TypedRequestBody, TypedRequestParams, TypedRequestParamsBody } from "../types/request";
+import { mergeProblemMetaData } from "../utilities/problemMetaData";
 import {
   CreateDraftProblemBody,
   ListProblemsQuery,
   ProblemEvaluationSettingsBody,
   ProblemIdInParam,
+  ProblemParamsBody,
   ProblemSlugNameInParam,
   ReferenceSolutionBody,
   UpdateContentBody,
@@ -132,6 +134,21 @@ export const evaluationSettingsController = async (req: TypedRequestParamsBody<P
     success: true,
     statusCode: StatusCodes.OK,
     message: "Evaluation settings updated successfully",
+    data: updatedProblem
+  };
+
+  next();
+};
+
+export const updateProblemParamsController = async (req: TypedRequestParamsBody<ProblemIdInParam, ProblemParamsBody>, res: Response, next: NextFunction) => {
+  const { problemId } = req.params;
+
+  const updatedProblem = await ProblemServices.updateProblemById(problemId, { meta_data: mergeProblemMetaData(req.problem!.meta_data, req.body) });
+
+  res.locals.responseData = {
+    success: true,
+    statusCode: StatusCodes.OK,
+    message: "Problem params updated successfully",
     data: updatedProblem
   };
 
