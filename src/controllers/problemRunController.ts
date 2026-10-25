@@ -4,11 +4,13 @@ import { NotFound } from "http-errors";
 import { StatusCodes } from "http-status-codes";
 
 import prisma from "../config/prisma";
+import { ID_PREFIXES } from "../constants/idPrefixes";
 import CustomError from "../exceptions/custom-error";
 import { ProblemRunJobData } from "../Queue/jobs/problemRunJob";
 import { queueManager } from "../Queue/QueueManager";
 import { findTemplateForLanguage } from "../services/judge/assembleExecutableCode";
 import { TypedRequestParamsBody } from "../types/request";
+import { generateId } from "../utilities/commonFunctions";
 import { getProblemMetaData } from "../utilities/problemMetaData";
 import { ProblemRunBody } from "../zodValidations/problemRunValidations";
 import { ProblemIdInParam } from "../zodValidations/problemValidations";
@@ -52,7 +54,7 @@ export const runProblemCodeController = async (req: TypedRequestParamsBody<Probl
     inputs
   };
 
-  const job = await problemRunQueue.add("problemRun", jobData);
+  const job = await problemRunQueue.add("problemRun", jobData, { jobId: generateId(ID_PREFIXES.EXECUTION_JOB) });
 
   res.locals.responseData = {
     success: true,

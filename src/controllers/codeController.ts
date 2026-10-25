@@ -3,8 +3,10 @@ import { Request, Response } from "express";
 import { BadRequest, NotFound } from "http-errors";
 import { StatusCodes } from "http-status-codes";
 
+import { ID_PREFIXES } from "../constants/idPrefixes";
 import { queueManager } from "../Queue/QueueManager";
 import { QUEUE_NAMES } from "../Queue/QueueNames";
+import { generateId } from "../utilities/commonFunctions";
 
 const EXECUTION_RESULT_QUEUES: QUEUE_NAMES[] = ["programming", "problemRun"];
 
@@ -21,7 +23,7 @@ export const runCode = async (req: Request, res: Response) => {
 
   const programmingQueue = queueManager.getQueue("programming");
 
-  const job = await programmingQueue.add("programming", body);
+  const job = await programmingQueue.add("programming", body, { jobId: generateId(ID_PREFIXES.EXECUTION_JOB) });
 
   return res.status(StatusCodes.OK).json({
     jobId: job.id

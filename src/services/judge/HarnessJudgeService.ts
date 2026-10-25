@@ -101,8 +101,10 @@ export class HarnessJudgeService {
     solutionCode: string;
     inputs: string[];
     timeLimitMsPerCase: number;
+    /** Wait for the sandbox to be back in the pool before returning — needed when the caller acquires the same language next. */
+    awaitRelease?: boolean;
   }): Promise<RunCasesResult | { compileError: string }> {
-    const { language, hiddenStubCode, solutionCode, inputs, timeLimitMsPerCase } = params;
+    const { language, hiddenStubCode, solutionCode, inputs, timeLimitMsPerCase, awaitRelease = false } = params;
 
     let executableCode: string;
     try {
@@ -124,7 +126,8 @@ export class HarnessJudgeService {
       recycleContainer = result.shouldRecycleContainer;
       return result;
     } finally {
-      void poolManager.release(container, { recycle: recycleContainer }).catch((err) => logger.error(`Failed to release container ${container.name}: ${err}`));
+      const release = poolManager.release(container, { recycle: recycleContainer }).catch((err) => logger.error(`Failed to release container ${container.name}: ${err}`));
+      if (awaitRelease) await release;
     }
   }
 

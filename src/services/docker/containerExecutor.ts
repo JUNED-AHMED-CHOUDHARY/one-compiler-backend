@@ -24,6 +24,9 @@ export interface DockerExecutorResult {
   outputTruncated: boolean;
 }
 
+const EXIT_POLL_INTERVAL_MS = 25;
+const EXIT_GRACE_MS = 1000;
+
 const shouldAttachStdin = (stdin: string | Readable | undefined): stdin is string | Readable => stdin !== undefined;
 
 /**
@@ -65,7 +68,20 @@ export const dockerExecutor = async ({
       clearTimeout(timer);
 
       try {
-        const inspectData = await exec.inspect();
+        // A closed stream doesn't mean the process exited: Docker Desktop on Windows drops the whole
+        // hijacked connection once stdin ends, so wait for the real exit (bounded by the time limit).
+        let inspectData = await exec.inspect();
+        const deadline = executionStartedAt + timeoutMs + EXIT_GRACE_MS;
+        while (inspectData.Running && Date.now() < deadline) {
+          await new Promise((r) => setTimeout(r, EXIT_POLL_INTERVAL_MS));
+          inspectData = await exec.inspect();
+        }
+
+        if (inspectData.Running) {
+          timedOut = true;
+          await forceStopExecStream();
+        }
+
         resolve({
           stdout: Buffer.concat(stdoutChunks).toString("utf-8").trim(),
           stderr: Buffer.concat(stderrChunks).toString("utf-8").trim(),

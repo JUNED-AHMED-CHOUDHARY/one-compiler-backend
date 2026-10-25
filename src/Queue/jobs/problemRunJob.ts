@@ -53,7 +53,9 @@ const problemRunJob: Processor<ProblemRunJobData, ProblemRunResult> = async (job
       hiddenStubCode: referenceTemplate.hidden_stub_code,
       solutionCode: problem.reference_solution_code,
       inputs,
-      timeLimitMsPerCase: problem.time_limit_ms
+      timeLimitMsPerCase: problem.time_limit_ms,
+      // the user run right after may need this same container (same language, small pool)
+      awaitRelease: true
     });
 
     if ("compileError" in reference) {

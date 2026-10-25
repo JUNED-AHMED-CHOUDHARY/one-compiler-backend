@@ -27,6 +27,8 @@ export const zodValidateBody = (schema: ZodType) => {
       );
     }
 
+    // Controllers get the parsed body: .trim() / .default() / coercions applied, unknown keys stripped.
+    req.body = result.data;
     return next();
   };
 };
