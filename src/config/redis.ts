@@ -11,7 +11,8 @@ const redisOptions: RedisOptions = {
   enableReadyCheck: false,
   keepAlive: 10000,
   family: 4,
-  tls: {}
+  // Upstash needs TLS (rediss://); a local redis:// server would fail the handshake
+  ...(ENV.REDIS_URI?.startsWith("rediss://") ? { tls: {} } : {})
 };
 
 class Client {
