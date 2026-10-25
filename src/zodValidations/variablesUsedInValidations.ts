@@ -16,3 +16,8 @@ export const MAX_MEMORY_LIMIT_KB = 256000; // 256MB
 export const MAX_HARNESS_SUITE_TIMEOUT_MS = 120_000; // 2 minutes
 /** Cap stderr collection inside docker exec to avoid RAM blowups. */
 export const MAX_STDERR_LENGTH = 256 * 1024; // 256KB
+
+// learner "Run" (samples + custom testcases)
+export const MAX_RUN_TESTCASES = 10;
+/** Per-testcase input cap; sample testcases in the zip must also fit (input + expected) so learners can re-run them. */
+export const MAX_RUN_INPUT_LENGTH = 16 * 1024; // 16KB

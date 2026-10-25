@@ -1,12 +1,17 @@
 import fs from "node:fs";
 
+import { ProgrammingLanguage } from "@prisma/client";
 import { UnrecoverableError } from "bullmq";
 
-import { HARNESS_FAIL_PREFIX, HARNESS_SUCCESS, parseHarnessVerdict } from "../../constants/judgeProtocol";
+import { buildRunModeStdin, HARNESS_FAIL_PREFIX, HARNESS_SUCCESS, parseHarnessVerdict, parseRunModeOutput, RUN_MODE_FLAG, RunModeCase } from "../../constants/judgeProtocol";
+import { getRunnerLanguageFromDBLanguage } from "../../utilities/languageMapper";
 import { MAX_HARNESS_SUITE_TIMEOUT_MS, MAX_OUTPUT_LENGTH } from "../../zodValidations/variablesUsedInValidations";
 import { dockerExecutor, DockerExecutorResult } from "../docker/containerExecutor";
-import { ContainerState } from "../docker/PoolManager";
+import { getLanguageExecutionConfig } from "../docker/dockerRunner";
+import { ContainerState, poolManager } from "../docker/PoolManager";
+import { logger } from "../logger";
 
+import { assembleExecutableCode } from "./assembleExecutableCode";
 import { CachedHarnessPayload } from "./TestCaseCacheService";
 
 export type HarnessRunResult = {
@@ -15,26 +20,34 @@ export type HarnessRunResult = {
   shouldRecycleContainer: boolean;
 };
 
+export type RunCasesResult = HarnessRunResult & { cases: RunModeCase[] };
+
+type CompileParams = {
+  container: ContainerState;
+  fileName: string;
+  executableCode: string;
+  compileCommand?: string;
+  compileTimeoutMs?: number;
+};
+
+const suiteTimeoutMs = (timeLimitMsPerCase: number, testcaseCount: number) =>
+  Math.min(Math.max(timeLimitMsPerCase * testcaseCount, timeLimitMsPerCase), MAX_HARNESS_SUITE_TIMEOUT_MS);
+
+const shouldRecycle = (execution: DockerExecutorResult) => execution.timedOut || execution.outputTruncated || execution.exitCode !== 0;
+
 /**
- * Shared harness judge operations used by verify/publish and (later) submit jobs.
+ * Shared harness judge operations used by verify/publish, learner run and (later) submit jobs.
  */
 export class HarnessJudgeService {
-  static async writeSourceAndCompile(params: {
-    container: ContainerState;
-    fileName: string;
-    executableCode: string;
-    compileCommand?: string;
-    compileTimeoutMs?: number;
-  }): Promise<void> {
-    const { container, fileName, executableCode, compileCommand, compileTimeoutMs = 15000 } = params;
-
+  /** Returns the compilation error message, or null when the source is ready to run. */
+  static async tryWriteSourceAndCompile({ container, fileName, executableCode, compileCommand, compileTimeoutMs = 15000 }: CompileParams): Promise<string | null> {
     await dockerExecutor({
       container,
       command: `cat > /workspace/${fileName}`,
       stdin: executableCode
     });
 
-    if (!compileCommand) return;
+    if (!compileCommand) return null;
 
     const compileResult = await dockerExecutor({
       container,
@@ -42,32 +55,77 @@ export class HarnessJudgeService {
       timeoutMs: compileTimeoutMs
     });
 
-    if (compileResult.timedOut) {
-      throw new UnrecoverableError("Compilation Error: Time Limit Exceeded");
-    }
+    if (compileResult.timedOut) return "Compilation Error: Time Limit Exceeded";
+    if (compileResult.exitCode !== 0) return `Compilation Error:\n${compileResult.stderr || compileResult.stdout}`;
 
-    if (compileResult.exitCode !== 0) {
-      throw new UnrecoverableError(`Compilation Error:\n${compileResult.stderr || compileResult.stdout}`);
-    }
+    return null;
+  }
+
+  static async writeSourceAndCompile(params: CompileParams): Promise<void> {
+    const compileError = await this.tryWriteSourceAndCompile(params);
+    if (compileError) throw new UnrecoverableError(compileError);
   }
 
   static async runHarness(params: { container: ContainerState; runCommand: string; harnessPayload: CachedHarnessPayload; timeLimitMsPerCase: number }): Promise<HarnessRunResult> {
     const { container, runCommand, harnessPayload, timeLimitMsPerCase } = params;
 
-    const uncappedTimeout = timeLimitMsPerCase * harnessPayload.testcaseCount;
-    const timeoutMs = Math.min(Math.max(uncappedTimeout, timeLimitMsPerCase), MAX_HARNESS_SUITE_TIMEOUT_MS);
-
     const execution = await dockerExecutor({
       container,
       command: runCommand,
       stdin: fs.createReadStream(harnessPayload.absolutePath, { highWaterMark: 512 * 1024 }),
-      timeoutMs,
+      timeoutMs: suiteTimeoutMs(timeLimitMsPerCase, harnessPayload.testcaseCount),
       maxOutputLength: Math.max(MAX_OUTPUT_LENGTH, 64 * 1024)
     });
 
-    const shouldRecycleContainer = execution.timedOut || execution.outputTruncated || execution.exitCode !== 0;
+    return { execution, shouldRecycleContainer: shouldRecycle(execution) };
+  }
 
-    return { execution, shouldRecycleContainer };
+  /** Runs an already-compiled stub in run mode — see RUN_MODE_FLAG in constants/judgeProtocol.ts. */
+  static async runCases(params: { container: ContainerState; runCommand: string; inputs: string[]; timeLimitMsPerCase: number }): Promise<RunCasesResult> {
+    const { container, runCommand, inputs, timeLimitMsPerCase } = params;
+
+    const execution = await dockerExecutor({
+      container,
+      command: `${runCommand} ${RUN_MODE_FLAG}`,
+      stdin: buildRunModeStdin(inputs),
+      timeoutMs: suiteTimeoutMs(timeLimitMsPerCase, inputs.length)
+    });
+
+    return { execution, cases: parseRunModeOutput(execution.stdout), shouldRecycleContainer: shouldRecycle(execution) };
+  }
+
+  /** Acquire → assemble → compile → run mode → release, for one solution in its own sandbox. */
+  static async compileAndRunCases(params: {
+    language: ProgrammingLanguage;
+    hiddenStubCode: string;
+    solutionCode: string;
+    inputs: string[];
+    timeLimitMsPerCase: number;
+  }): Promise<RunCasesResult | { compileError: string }> {
+    const { language, hiddenStubCode, solutionCode, inputs, timeLimitMsPerCase } = params;
+
+    let executableCode: string;
+    try {
+      executableCode = assembleExecutableCode(hiddenStubCode, solutionCode);
+    } catch (error) {
+      throw new UnrecoverableError(error instanceof Error ? error.message : "Failed to assemble executable code");
+    }
+
+    const runnerLanguage = getRunnerLanguageFromDBLanguage(language, UnrecoverableError);
+    const { fileName, compileCommand, batchRunCommand } = getLanguageExecutionConfig(runnerLanguage);
+    const container = await poolManager.acquire(runnerLanguage);
+    let recycleContainer = false;
+
+    try {
+      const compileError = await this.tryWriteSourceAndCompile({ container, fileName, executableCode, compileCommand });
+      if (compileError) return { compileError };
+
+      const result = await this.runCases({ container, runCommand: batchRunCommand, inputs, timeLimitMsPerCase });
+      recycleContainer = result.shouldRecycleContainer;
+      return result;
+    } finally {
+      void poolManager.release(container, { recycle: recycleContainer }).catch((err) => logger.error(`Failed to release container ${container.name}: ${err}`));
+    }
   }
 
   /** Convert harness execution into pass / UnrecoverableError (BullMQ-friendly). */

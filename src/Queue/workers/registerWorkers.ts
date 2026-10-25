@@ -1,6 +1,7 @@
 import { Processor } from "bullmq";
 
 import codeRunnerJob from "../jobs/codeRunnerJob";
+import problemRunJob from "../jobs/problemRunJob";
 import testCasesUploadJob from "../jobs/testCasesUploadJob";
 import verifyAndPublishJob from "../jobs/verifyAndPublishJob";
 import { queueManager } from "../QueueManager";
@@ -17,6 +18,11 @@ const workers: WorkerDefination[] = [
   {
     name: "programming",
     processor: codeRunnerJob,
+    concurrency: 10
+  },
+  {
+    name: "problemRun",
+    processor: problemRunJob,
     concurrency: 10
   },
   {

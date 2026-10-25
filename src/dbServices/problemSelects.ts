@@ -56,7 +56,9 @@ const problemDetailScalars = {
   status: true,
   time_limit_ms: true,
   memory_limit_kb: true,
-  evaluation_type: true
+  evaluation_type: true,
+  // params + sample_testcases for the learner's Run panel (see utilities/problemMetaData.ts)
+  meta_data: true
 } satisfies Prisma.ProblemsSelect;
 
 export const PROBLEM_LIST_SELECT = {
